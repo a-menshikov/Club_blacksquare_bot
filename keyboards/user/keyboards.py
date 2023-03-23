@@ -14,7 +14,7 @@ def reg_keyboard():
     return markup
 
 
-def menu_reply_keyboard(admin: bool):
+def menu_reply_keyboard(admin: bool = False):
     """Клавиатура главного меню юзера."""
     markup = ReplyKeyboardMarkup(resize_keyboard=True, selective=True)
     markup.row(
