@@ -11,7 +11,7 @@ load_dotenv()
 logging.basicConfig(level=logging.INFO)
 
 TELEGRAM_TOKEN = os.getenv("T_TOKEN")
-ADMIN = int(os.getenv("ADMIN_ID"))
+ADMIN = list(map(int, os.getenv("ADMIN_ID").split()))
 
 storage = MemoryStorage()
 bot = Bot(token=TELEGRAM_TOKEN)
