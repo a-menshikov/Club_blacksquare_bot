@@ -59,16 +59,17 @@ def get_calendar(future: bool = False) -> list:
             ).order_by(Event.event_date).all()
 
 
-def make_calendar_message(data: list) -> str:
+def make_user_calendar_message(data: list) -> str:
     """Формирование сообщения календаря"""
     if not data:
         return 'Календарь пуст.'
     base_message = ''
     for i in data:
-        add_message = (f'<b>Идентификатор:</b>  {i[0]}\n'
-                       f'<b>Событие:</b>  {i[1]}\n'
-                       f'<b>Дата:</b>  {i[2]}\n'
-                       f'<b>Время:</b>  {i[3]}\n'
-                       f'<b>Стоимость:</b>  {i[4]}\n\n')
+        add_message = (
+            f'<b>Дата:</b>  {i[2]}\n'
+            f'<b>Событие:</b>  {i[1]}\n'
+            f'<b>Время:</b>  {i[3]}\n'
+            f'<b>Стоимость:</b>  {i[4]}\n\n'
+            )
         base_message += add_message
     return base_message

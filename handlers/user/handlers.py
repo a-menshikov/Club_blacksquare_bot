@@ -1,7 +1,7 @@
 from aiogram import types
 from aiogram.dispatcher import Dispatcher
 from data.services import (create_new_user, get_calendar, is_admin,
-                           is_user_exist_in_base, make_calendar_message)
+                           is_user_exist_in_base, make_user_calendar_message)
 from keyboards.user.keyboards import (calendar, in_main_menu,
                                       menu_reply_keyboard, reg_button,
                                       reg_keyboard)
@@ -55,7 +55,7 @@ async def get_future_calendar(message: types.Message):
     telegram_id = message.from_user.id
     admin = is_admin(telegram_id)
     data = get_calendar(future=True)
-    events_message = make_calendar_message(data)
+    events_message = make_user_calendar_message(data)
     await message.answer(events_message,
                          parse_mode='html',
                          reply_markup=menu_reply_keyboard(admin))
