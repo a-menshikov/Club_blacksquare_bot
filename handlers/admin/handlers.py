@@ -1,8 +1,9 @@
 from aiogram import types
 from aiogram.dispatcher import Dispatcher
+
 from data.services import is_admin
-from keyboards.user.keyboards import (menu_reply_keyboard, admin_menu)
 from keyboards.admin.keyboards import main_admin_menu_keyboard
+from keyboards.user.keyboards import admin_menu, menu_reply_keyboard
 
 
 async def admin_main_menu(message: types.Message):

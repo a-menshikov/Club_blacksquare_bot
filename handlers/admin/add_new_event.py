@@ -1,5 +1,6 @@
 from aiogram import types
 from aiogram.dispatcher import Dispatcher, FSMContext
+
 from data.services import create_new_event, is_admin
 from handlers.admin.validators import (validate_date, validate_name,
                                        validate_payment, validate_time)
