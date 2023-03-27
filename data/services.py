@@ -67,8 +67,8 @@ def make_user_calendar_message(data: list) -> str:
     for i in data:
         add_message = (
             f'<b>Дата:</b>  {i[2]}\n'
-            f'<b>Событие:</b>  {i[1]}\n'
             f'<b>Время:</b>  {i[3]}\n'
+            f'<b>Событие:</b>  {i[1]}\n'
             f'<b>Стоимость:</b>  {i[4]}\n\n'
             )
         base_message += add_message
