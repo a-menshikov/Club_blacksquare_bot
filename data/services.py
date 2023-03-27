@@ -1,10 +1,12 @@
-from sqlalchemy.sql import exists
 import datetime
+
+from sqlalchemy.sql import exists
+
 from config import timezone
+from loader import ADMIN
 
 from .db_loader import db_session
-from .models import User, Event
-from loader import ADMIN
+from .models import Event, User
 
 
 def is_user_exist_in_base(telegram_id: int) -> bool:
@@ -29,9 +31,17 @@ def create_new_user(telegram_id: int) -> None:
 
 
 def create_new_event(data: dict) -> None:
-    """Создание нового пользователя"""
+    """Создание нового события"""
     new_event = Event(**data)
     db_session.add(new_event)
+    db_session.commit()
+
+
+def delete_event(event_id: str) -> None:
+    """Удаление события"""
+    event = db_session.query(Event).filter(
+        Event.id == event_id).one()
+    db_session.delete(event)
     db_session.commit()
 
 
@@ -59,8 +69,20 @@ def get_calendar(future: bool = False) -> list:
             ).order_by(Event.event_date).all()
 
 
+def get_event_info(id: str):
+    """Получить информацию о событии по id."""
+    return db_session.query(
+            Event.name,
+            Event.event_date,
+            Event.event_time,
+            Event.payment
+            ).where(
+                Event.id == id
+                ).one_or_none()
+
+
 def make_user_calendar_message(data: list) -> str:
-    """Формирование сообщения календаря"""
+    """Формирование сообщения календаря для юзера"""
     if not data:
         return 'Календарь пуст.'
     base_message = ''
@@ -70,6 +92,19 @@ def make_user_calendar_message(data: list) -> str:
             f'<b>Время:</b>  {i[3]}\n'
             f'<b>Событие:</b>  {i[1]}\n'
             f'<b>Стоимость:</b>  {i[4]}\n\n'
+            )
+        base_message += add_message
+    return base_message
+
+
+def make_admin_calendar_message(data: list) -> str:
+    """Формирование сообщения календаря для админа"""
+    if not data:
+        return 'Календарь пуст.'
+    base_message = ''
+    for i in data:
+        add_message = (
+            f'<b>{i[0]}.</b>  {i[1]}  {i[2]}\n'
             )
         base_message += add_message
     return base_message
