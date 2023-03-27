@@ -7,3 +7,4 @@ class NewEventStates(StatesGroup):
     event_date = State()
     event_time = State()
     payment = State()
+    approve = State()

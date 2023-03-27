@@ -2,8 +2,10 @@ from aiogram import types
 from aiogram.dispatcher import Dispatcher, FSMContext
 from data.services import create_new_event, is_admin
 from handlers.admin.validators import (validate_date, validate_name,
-                                       validate_time, validate_payment)
-from keyboards.admin.keyboards import add_event, cancel_button, canсel_keyboard
+                                       validate_payment, validate_time)
+from keyboards.admin.keyboards import (add_event, approve_button,
+                                       approve_keyboard, cancel_button,
+                                       canсel_keyboard)
 from keyboards.user.keyboards import menu_reply_keyboard
 from states.add_event import NewEventStates
 
@@ -86,10 +88,28 @@ async def event_payment_input(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
         data['payment'] = payment
         data['owner_id'] = telegram_id
-        create_new_event(data)
+    await NewEventStates.next()
+    check_message = (f"<u>Подтвердите добавление события:</u>\n\n"
+                     f"<b>Дата:</b> {data['event_date']}\n"
+                     f"<b>Время:</b> {data['event_time']}\n"
+                     f"<b>Событие:</b> {data['name']}\n"
+                     f"<b>Стоимость:</b> {data['payment']}")
+    await message.answer(check_message,
+                         parse_mode='html',
+                         reply_markup=approve_keyboard())
+
+
+async def new_event_approve(message: types.Message, state: FSMContext):
+    """Подтверждение создания события."""
+    if message.text == approve_button:
+        async with state.proxy() as data:
+            create_new_event(data)
         await message.answer("Запись создана",
                              reply_markup=menu_reply_keyboard(True))
-    await state.finish()
+        await state.finish()
+    else:
+        await message.answer("Подтвердите или отмените процесс")
+        return
 
 
 async def cancel_add_note(message: types.Message, state: FSMContext):
@@ -114,3 +134,5 @@ def register_add_event_handlers(dp: Dispatcher):
                                 state=NewEventStates.event_time)
     dp.register_message_handler(event_payment_input,
                                 state=NewEventStates.payment)
+    dp.register_message_handler(new_event_approve,
+                                state=NewEventStates.approve)
