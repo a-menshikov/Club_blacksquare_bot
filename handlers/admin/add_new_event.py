@@ -1,6 +1,8 @@
 from aiogram import types
 from aiogram.dispatcher import Dispatcher, FSMContext
-from data.services import is_admin, create_new_event
+from data.services import create_new_event, is_admin
+from handlers.admin.validators import (validate_date, validate_name,
+                                       validate_time, validate_payment)
 from keyboards.admin.keyboards import add_event, cancel_button, canсel_keyboard
 from keyboards.user.keyboards import menu_reply_keyboard
 from states.add_event import NewEventStates
@@ -22,14 +24,13 @@ async def new_event(message: types.Message):
 async def event_name_input(message: types.Message, state: FSMContext):
     """Ввод названия события."""
     name = message.text
-    # if not validate_name(name):
-    #     await message.answer(
-    #         'Что то не так с введенным именем.\n'
-    #         'Имя должно состоять из цифр или '
-    #         'букв русского/латинского алфавитов '
-    #         'и быть не более 200 символов.'
-    #     )
-    #     return
+    if not validate_name(name):
+        await message.answer(
+            'Что то не так с введенным текстом.\n'
+            'Название не должно содержать символы <> '
+            'и быть не длиннее 1000 символов.'
+        )
+        return
     async with state.proxy() as data:
         data['name'] = name
     await NewEventStates.next()
@@ -39,14 +40,14 @@ async def event_name_input(message: types.Message, state: FSMContext):
 
 async def event_date_input(message: types.Message, state: FSMContext):
     """Ввод даты события."""
-    event_date = message.text
-    # if not validate_birthday(birthday):
-    #     await message.answer(
-    #         'Что то не так с введенной датой.\n'
-    #         'Сообщение дожно быть в формате ДД.ММ '
-    #         '(например 13.04 или 29.02) и быть реальной датой.'
-    #     )
-    #     return
+    event_date = message.text.strip()
+    if not validate_date(event_date):
+        await message.answer(
+            'Что то не так с введенной датой.\n'
+            'Сообщение дожно быть в формате ГГГГ-ММ-ДД '
+            '(например 2026-04-13).'
+        )
+        return
     async with state.proxy() as data:
         data['event_date'] = event_date
     await NewEventStates.next()
@@ -56,14 +57,14 @@ async def event_date_input(message: types.Message, state: FSMContext):
 
 async def event_time_input(message: types.Message, state: FSMContext):
     """Ввод времени события."""
-    event_time = message.text
-    # if not validate_birthday(birthday):
-    #     await message.answer(
-    #         'Что то не так с введенной датой.\n'
-    #         'Сообщение дожно быть в формате ДД.ММ '
-    #         '(например 13.04 или 29.02) и быть реальной датой.'
-    #     )
-    #     return
+    event_time = message.text.strip()
+    if not validate_time(event_time):
+        await message.answer(
+            'Что то не так с введенным временем.\n'
+            'Сообщение дожно быть в формате ЧЧ-ММ '
+            '(например 12-00 или 23-59).'
+        )
+        return
     async with state.proxy() as data:
         data['event_time'] = event_time
     await NewEventStates.next()
@@ -73,9 +74,15 @@ async def event_time_input(message: types.Message, state: FSMContext):
 
 async def event_payment_input(message: types.Message, state: FSMContext):
     """Ввод стоимости события."""
-    payment = message.text
+    payment = message.text.strip()
     telegram_id = message.from_user.id
-
+    if not validate_payment(payment):
+        await message.answer(
+            'Что то не так с введенной стоимость.\n'
+            'Текст не должен содержать символы <> '
+            'и быть не длиннее 1000 символов.'
+        )
+        return
     async with state.proxy() as data:
         data['payment'] = payment
         data['owner_id'] = telegram_id
