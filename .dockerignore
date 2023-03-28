@@ -1,0 +1,11 @@
+.env
+*.db
+*.log
+.git
+venv/
+pytest.ini
+__pycache__/
+Dockerfile
+docker-compose.yml
+LICENSE
+README.md

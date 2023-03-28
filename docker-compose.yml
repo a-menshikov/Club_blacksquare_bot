@@ -1,0 +1,11 @@
+version: '3.0'
+
+services:
+  bot:
+    image: menshikovas/club_blacksquare_bot:latest
+    working_dir: /bot
+    volumes:
+      - /mnt/e/DEV/square/db:/bot/db
+      - /mnt/e/DEV/square/logs:/bot/logs
+    restart: always
+    env_file: /mnt/e/DEV/private/club_blacksquare_bot/.env
