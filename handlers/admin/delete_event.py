@@ -20,7 +20,7 @@ async def delete_event_start(message: types.Message):
         data = get_calendar(future=True)
         events_message = make_admin_calendar_message(data)
         base_message = ('\nВведите идентификатор события, '
-                        'которое нужно удалить.\n Выше список '
+                        'которое нужно удалить. Выше список '
                         'актуальных событий с идентификаторами')
         events_message += base_message
         await message.answer(events_message,

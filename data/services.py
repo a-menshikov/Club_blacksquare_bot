@@ -45,6 +45,20 @@ def delete_event(event_id: str) -> None:
     db_session.commit()
 
 
+def update_event(data: dict) -> None:
+    """Обновление события"""
+    db_session.query(Event).filter(
+        Event.id == data['event_id']).update(
+            {'name': data['name'],
+             'event_date': data['event_date'],
+             'event_time': data['event_time'],
+             'payment': data['payment'],
+             },
+            synchronize_session='fetch'
+            )
+    db_session.commit()
+
+
 def get_calendar(future: bool = False) -> list:
     """Получить список событий.
     Eсли future==True - только будущие."""
@@ -100,7 +114,7 @@ def make_user_calendar_message(data: list) -> str:
 def make_admin_calendar_message(data: list) -> str:
     """Формирование сообщения календаря для админа"""
     if not data:
-        return 'Календарь пуст.'
+        return 'Календарь пуст.\n'
     base_message = ''
     for i in data:
         add_message = (
