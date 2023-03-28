@@ -60,7 +60,7 @@ async def delete_event_finish(message: types.Message, state: FSMContext):
         async with state.proxy() as payload:
             delete_event(payload['event_id'])
         await message.answer("Запись удалена",
-                             reply_markup=menu_reply_keyboard(True))
+                             reply_markup=main_admin_menu_keyboard())
         await state.finish()
     else:
         await message.answer("Подтвердите или отмените процесс")

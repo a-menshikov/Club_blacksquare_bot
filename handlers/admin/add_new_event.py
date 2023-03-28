@@ -1,12 +1,12 @@
 from aiogram import types
 from aiogram.dispatcher import Dispatcher, FSMContext
-
 from data.services import create_new_event, is_admin
 from handlers.admin.validators import (validate_date, validate_name,
                                        validate_payment, validate_time)
 from keyboards.admin.keyboards import (add_event, approve_button,
                                        approve_keyboard, cancel_button,
-                                       canсel_keyboard)
+                                       canсel_keyboard,
+                                       main_admin_menu_keyboard)
 from keyboards.user.keyboards import menu_reply_keyboard
 from states.add_event import NewEventStates
 
@@ -106,7 +106,7 @@ async def new_event_approve(message: types.Message, state: FSMContext):
         async with state.proxy() as data:
             create_new_event(data)
         await message.answer("Запись создана",
-                             reply_markup=menu_reply_keyboard(True))
+                             reply_markup=main_admin_menu_keyboard())
         await state.finish()
     else:
         await message.answer("Подтвердите или отмените процесс")
@@ -119,7 +119,7 @@ async def cancel_add_note(message: types.Message, state: FSMContext):
     if current_state is not None:
         await state.finish()
         await message.answer('Операция отменена',
-                             reply_markup=menu_reply_keyboard(True))
+                             reply_markup=main_admin_menu_keyboard())
     else:
         await message.answer('Так ведь нечего отменять',
                              reply_markup=menu_reply_keyboard(True))
