@@ -6,6 +6,7 @@ from data.services import (create_new_user, get_calendar, is_admin,
 from keyboards.user.keyboards import (calendar, in_main_menu,
                                       menu_reply_keyboard, reg_button,
                                       reg_keyboard)
+from loader import logger
 
 
 async def starter(message: types.Message):
@@ -57,6 +58,8 @@ async def get_future_calendar(message: types.Message):
     admin = is_admin(telegram_id)
     data = get_calendar(future=True)
     events_message = make_user_calendar_message(data)
+    logger.info(f"{telegram_id} {message.from_user.username} "
+                f"запросил календарь")
     await message.answer(events_message,
                          parse_mode='html',
                          reply_markup=menu_reply_keyboard(admin))

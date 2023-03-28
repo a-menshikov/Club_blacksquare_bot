@@ -11,6 +11,7 @@ from keyboards.admin.keyboards import (approve_button, approve_keyboard,
                                        main_admin_menu_keyboard, skip_button,
                                        skip_keyboard)
 from keyboards.user.keyboards import menu_reply_keyboard
+from loader import logger
 from states.edit_event import EditEventStates
 
 
@@ -199,6 +200,8 @@ async def edit_event_approve(message: types.Message, state: FSMContext):
     """Подтверждение редактирования события."""
     if message.text == approve_button:
         async with state.proxy() as payload:
+            logger.info(f"{message.from_user.id} редактирует "
+                        f"событие {payload['event_id']}")
             update_event(payload)
         await message.answer("Запись отредактирована",
                              reply_markup=main_admin_menu_keyboard())

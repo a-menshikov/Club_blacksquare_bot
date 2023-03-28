@@ -3,7 +3,7 @@ import datetime
 from sqlalchemy.sql import exists
 
 from config import timezone
-from loader import ADMIN
+from loader import ADMIN, logger
 
 from .db_loader import db_session
 from .models import Event, User
@@ -28,6 +28,7 @@ def create_new_user(telegram_id: int) -> None:
     new_user = User(id=telegram_id)
     db_session.add(new_user)
     db_session.commit()
+    logger.info(f'Зарегистрирован новый пользователь {telegram_id}')
 
 
 def create_new_event(data: dict) -> None:
@@ -35,6 +36,7 @@ def create_new_event(data: dict) -> None:
     new_event = Event(**data)
     db_session.add(new_event)
     db_session.commit()
+    logger.info(f"{data['owner_id']} создал новое событие {data['name']}")
 
 
 def delete_event(event_id: str) -> None:
@@ -43,6 +45,7 @@ def delete_event(event_id: str) -> None:
         Event.id == event_id).one()
     db_session.delete(event)
     db_session.commit()
+    logger.info(f"Удалено событие {event_id}")
 
 
 def update_event(data: dict) -> None:
@@ -57,6 +60,7 @@ def update_event(data: dict) -> None:
             synchronize_session='fetch'
             )
     db_session.commit()
+    logger.info(f"Отредактировано событие {data['event_id']}")
 
 
 def get_calendar(future: bool = False) -> list:

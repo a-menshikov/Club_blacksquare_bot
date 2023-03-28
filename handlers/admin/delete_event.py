@@ -8,6 +8,7 @@ from keyboards.admin.keyboards import (approve_button, approve_keyboard,
                                        delete_event_button,
                                        main_admin_menu_keyboard)
 from keyboards.user.keyboards import menu_reply_keyboard
+from loader import logger
 from states.delete_event import DeleteEventStates
 
 
@@ -58,6 +59,8 @@ async def delete_event_finish(message: types.Message, state: FSMContext):
     """Завершение удаления события."""
     if message.text == approve_button:
         async with state.proxy() as payload:
+            logger.info(f"{message.from_user.id} удаляет "
+                        f"событие {payload['event_id']}")
             delete_event(payload['event_id'])
         await message.answer("Запись удалена",
                              reply_markup=main_admin_menu_keyboard())

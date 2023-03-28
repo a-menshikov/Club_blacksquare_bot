@@ -6,13 +6,17 @@ from handlers.admin.delete_event import register_delete_event_handlers
 from handlers.admin.edit_event import register_edit_event_handlers
 from handlers.admin.handlers import register_admin_handlers
 from handlers.user.handlers import register_user_handlers
-from loader import TECH, bot, dp
+from loader import TECH, bot, dp, logger
 
 
 async def on_startup(_):
     """Выполняется при старте бота."""
     await create_db()
-    await bot.send_message(TECH, 'Бот запущен')
+    try:
+        await bot.send_message(TECH, 'Бот запущен')
+    except Exception:
+        pass
+    logger.info('Бот запущен')
 
 register_user_handlers(dp)
 register_admin_handlers(dp)
