@@ -3,8 +3,9 @@ from aiogram.dispatcher import Dispatcher, FSMContext
 
 from data.services import (get_calendar, get_event_info, is_admin,
                            make_admin_calendar_message, update_event)
-from handlers.admin.validators import (validate_date, validate_name,
-                                       validate_payment, validate_time)
+from handlers.admin.validators import (validate_complexity, validate_date,
+                                       validate_name, validate_payment,
+                                       validate_time)
 from keyboards.admin.keyboards import (approve_button, approve_keyboard,
                                        cancel_button, canсel_keyboard,
                                        edit_event_button,
@@ -132,10 +133,10 @@ async def event_time_edit(message: types.Message, state: FSMContext):
     if event_time == skip_button:
         async with state.proxy() as payload:
             payload['event_time'] = payload['event'][2]
-            old_payment = payload['event'][3]
+            old_complexity = payload['event'][4]
             await EditEventStates.next()
-            await message.answer((f'Текущая стоимость: {old_payment}\n'
-                                  f'Введите новую стоимость или нажмите '
+            await message.answer((f'Текущая сложность: {old_complexity}\n'
+                                  f'Введите новую сложность или нажмите '
                                   f'кнопку Пропустить, если поле не '
                                   f'нужно редактировать'),
                                  reply_markup=skip_keyboard()
@@ -150,6 +151,40 @@ async def event_time_edit(message: types.Message, state: FSMContext):
             return
         async with state.proxy() as payload:
             payload['event_time'] = event_time
+            old_complexity = payload['event'][4]
+            await EditEventStates.next()
+            await message.answer((f'Текущая сложность: {old_complexity}\n'
+                                  f'Введите новую сложность или нажмите '
+                                  f'кнопку Пропустить, если поле не '
+                                  f'нужно редактировать'),
+                                 reply_markup=skip_keyboard()
+                                 )
+
+
+async def event_complexity_edit(message: types.Message, state: FSMContext):
+    """Ввод новой сложности события."""
+    event_complexity = message.text
+    if event_complexity == skip_button:
+        async with state.proxy() as payload:
+            payload['complexity'] = payload['event'][4]
+            old_payment = payload['event'][3]
+            await EditEventStates.next()
+            await message.answer((f'Текущая стоимость: {old_payment}\n'
+                                  f'Введите новую стоимость или нажмите '
+                                  f'кнопку Пропустить, если поле не '
+                                  f'нужно редактировать'),
+                                 reply_markup=skip_keyboard()
+                                 )
+    else:
+        if not validate_complexity(event_complexity):
+            await message.answer(
+                'Что то не так с введенным текстом.\n'
+                'Значение не должно содержать символы <> '
+                'и быть не длиннее 1000 символов.'
+            )
+            return
+        async with state.proxy() as payload:
+            payload['complexity'] = event_complexity
             old_payment = payload['event'][3]
             await EditEventStates.next()
             await message.answer((f'Текущая стоимость: {old_payment}\n'
@@ -171,6 +206,7 @@ async def event_payment_edit(message: types.Message, state: FSMContext):
                              f"<b>Дата:</b> {payload['event_date']}\n"
                              f"<b>Время:</b> {payload['event_time']}\n"
                              f"<b>Событие:</b> {payload['name']}\n"
+                             f"<b>Сложность:</b> {payload['complexity']}\n"
                              f"<b>Стоимость:</b> {payload['payment']}")
             await message.answer(check_message,
                                  parse_mode='html',
@@ -190,6 +226,7 @@ async def event_payment_edit(message: types.Message, state: FSMContext):
                              f"<b>Дата:</b> {payload['event_date']}\n"
                              f"<b>Время:</b> {payload['event_time']}\n"
                              f"<b>Событие:</b> {payload['name']}\n"
+                             f"<b>Сложность:</b> {payload['complexity']}\n"
                              f"<b>Стоимость:</b> {payload['payment']}")
             await message.answer(check_message,
                                  parse_mode='html',
@@ -233,6 +270,8 @@ def register_edit_event_handlers(dp: Dispatcher):
                                 state=EditEventStates.event_date)
     dp.register_message_handler(event_time_edit,
                                 state=EditEventStates.event_time)
+    dp.register_message_handler(event_complexity_edit,
+                                state=EditEventStates.complexity)
     dp.register_message_handler(event_payment_edit,
                                 state=EditEventStates.payment)
     dp.register_message_handler(edit_event_approve,

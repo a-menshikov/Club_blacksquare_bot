@@ -25,3 +25,11 @@ def validate_payment(message):
         r"^[^<>]+$",
         message
     ) and len(message) <= 1000)
+
+
+def validate_complexity(message):
+    """Валидация введенных данных в сложности события."""
+    return (re.fullmatch(
+        r"^[^<>]+$",
+        message
+    ) and len(message) <= 1000)

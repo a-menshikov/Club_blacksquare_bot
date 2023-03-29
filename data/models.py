@@ -20,5 +20,6 @@ class Event(Base):
     name = Column(Text, nullable=False)
     event_date = Column(Text, nullable=False)
     event_time = Column(Text, nullable=False)
+    complexity = Column(Text, nullable=False)
     payment = Column(Text, nullable=False)
     created_on = Column(Text, default=date.today)

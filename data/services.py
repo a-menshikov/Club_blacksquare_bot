@@ -56,6 +56,7 @@ def update_event(data: dict) -> None:
              'event_date': data['event_date'],
              'event_time': data['event_time'],
              'payment': data['payment'],
+             'complexity': data['complexity'],
              },
             synchronize_session='fetch'
             )
@@ -73,7 +74,8 @@ def get_calendar(future: bool = False) -> list:
             Event.name,
             Event.event_date,
             Event.event_time,
-            Event.payment
+            Event.payment,
+            Event.complexity,
             ).where(
                 Event.event_date >= today_full_date
                 ).order_by(Event.event_date).all()
@@ -83,7 +85,8 @@ def get_calendar(future: bool = False) -> list:
             Event.name,
             Event.event_date,
             Event.event_time,
-            Event.payment
+            Event.payment,
+            Event.complexity,
             ).order_by(Event.event_date).all()
 
 
@@ -93,7 +96,8 @@ def get_event_info(id: str):
             Event.name,
             Event.event_date,
             Event.event_time,
-            Event.payment
+            Event.payment,
+            Event.complexity,
             ).where(
                 Event.id == id
                 ).one_or_none()
@@ -109,6 +113,7 @@ def make_user_calendar_message(data: list) -> str:
             f'<b>Дата:</b>  {i[2]}\n'
             f'<b>Время:</b>  {i[3]}\n'
             f'<b>Событие:</b>  {i[1]}\n'
+            f'<b>Сложность:</b>  {i[5]}\n'
             f'<b>Стоимость:</b>  {i[4]}\n\n'
             )
         base_message += add_message

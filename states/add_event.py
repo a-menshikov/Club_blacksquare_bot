@@ -6,5 +6,6 @@ class NewEventStates(StatesGroup):
     name = State()
     event_date = State()
     event_time = State()
+    complexity = State()
     payment = State()
     approve = State()

@@ -41,6 +41,7 @@ async def delete_event_approve(message: types.Message, state: FSMContext):
                          f"<b>Дата:</b> {data[1]}\n"
                          f"<b>Время:</b> {data[2]}\n"
                          f"<b>Событие:</b> {data[0]}\n"
+                         f"<b>Сложность:</b> {data[4]}\n"
                          f"<b>Стоимость:</b> {data[3]}")
         async with state.proxy() as payload:
             payload['event_id'] = event_id

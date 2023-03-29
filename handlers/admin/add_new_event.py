@@ -2,8 +2,9 @@ from aiogram import types
 from aiogram.dispatcher import Dispatcher, FSMContext
 
 from data.services import create_new_event, is_admin
-from handlers.admin.validators import (validate_date, validate_name,
-                                       validate_payment, validate_time)
+from handlers.admin.validators import (validate_complexity, validate_date,
+                                       validate_name, validate_payment,
+                                       validate_time)
 from keyboards.admin.keyboards import (add_event, approve_button,
                                        approve_keyboard, cancel_button,
                                        canсel_keyboard,
@@ -72,6 +73,23 @@ async def event_time_input(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
         data['event_time'] = event_time
     await NewEventStates.next()
+    await message.answer("Введите ожидаемую сложность события",
+                         reply_markup=canсel_keyboard())
+
+
+async def event_complexity_input(message: types.Message, state: FSMContext):
+    """Ввод сложности события."""
+    event_complexity = message.text.strip()
+    if not validate_complexity(event_complexity):
+        await message.answer(
+            'Что то не так с введенной сложностью.\n'
+            'Текст не должен содержать символы <> '
+            'и быть не длиннее 1000 символов.'
+        )
+        return
+    async with state.proxy() as data:
+        data['complexity'] = event_complexity
+    await NewEventStates.next()
     await message.answer("Введите стоимость события",
                          reply_markup=canсel_keyboard())
 
@@ -95,6 +113,7 @@ async def event_payment_input(message: types.Message, state: FSMContext):
                      f"<b>Дата:</b> {data['event_date']}\n"
                      f"<b>Время:</b> {data['event_time']}\n"
                      f"<b>Событие:</b> {data['name']}\n"
+                     f"<b>Сложность:</b> {data['complexity']}\n"
                      f"<b>Стоимость:</b> {data['payment']}")
     await message.answer(check_message,
                          parse_mode='html',
@@ -134,6 +153,8 @@ def register_add_event_handlers(dp: Dispatcher):
                                 state=NewEventStates.event_date)
     dp.register_message_handler(event_time_input,
                                 state=NewEventStates.event_time)
+    dp.register_message_handler(event_complexity_input,
+                                state=NewEventStates.complexity)
     dp.register_message_handler(event_payment_input,
                                 state=NewEventStates.payment)
     dp.register_message_handler(new_event_approve,
