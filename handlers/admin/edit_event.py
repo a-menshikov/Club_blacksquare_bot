@@ -1,7 +1,11 @@
 from aiogram import types
 from aiogram.dispatcher import Dispatcher, FSMContext
 
-from data.services import (get_calendar, get_event_info, is_admin,
+from data.services import (convert_date_to_db_format,
+                           convert_date_to_read_format,
+                           convert_time_to_db_format,
+                           convert_time_to_read_format, get_calendar,
+                           get_event_info, is_admin,
                            make_admin_calendar_message, update_event)
 from handlers.admin.validators import (validate_complexity, validate_date,
                                        validate_name, validate_payment,
@@ -67,7 +71,8 @@ async def event_name_edit(message: types.Message, state: FSMContext):
             payload['name'] = payload['event'][0]
             old_date = payload['event'][1]
             await EditEventStates.next()
-            await message.answer((f'Текущая дата: {old_date}\n'
+            await message.answer((f'Текущая дата: '
+                                  f'{convert_date_to_read_format(old_date)}\n'
                                   f'Введите новую дату или нажмите кнопку '
                                   f'Пропустить, если поле не '
                                   f'нужно редактировать'),
@@ -85,7 +90,8 @@ async def event_name_edit(message: types.Message, state: FSMContext):
             payload['name'] = name
             old_date = payload['event'][1]
             await EditEventStates.next()
-            await message.answer((f'Текущая дата: {old_date}\n'
+            await message.answer((f'Текущая дата: '
+                                  f'{convert_date_to_read_format(old_date)}\n'
                                   f'Введите новую дату или нажмите кнопку '
                                   f'Пропустить, если поле не '
                                   f'нужно редактировать'),
@@ -101,7 +107,8 @@ async def event_date_edit(message: types.Message, state: FSMContext):
             payload['event_date'] = payload['event'][1]
             old_time = payload['event'][2]
             await EditEventStates.next()
-            await message.answer((f'Текущее время: {old_time}\n'
+            await message.answer((f'Текущее время: '
+                                  f'{convert_time_to_read_format(old_time)}\n'
                                   f'Введите новое время или нажмите кнопку '
                                   f'Пропустить, если поле не '
                                   f'нужно редактировать'),
@@ -111,16 +118,16 @@ async def event_date_edit(message: types.Message, state: FSMContext):
         if not validate_date(event_date):
             await message.answer(
                 'Что то не так с введенной датой.\n'
-                'Сообщение дожно быть в формате ГГГГ-ММ-ДД '
-                '(например 2026-04-13).'
+                'Сообщение дожно быть в формате ДД.ММ.ГГГГ'
+                '(например 13.04.2026).'
                 )
             return
         async with state.proxy() as payload:
-            payload['event_date'] = event_date
+            payload['event_date'] = convert_date_to_db_format(event_date)
             old_time = payload['event'][2]
             await EditEventStates.next()
-            await message.answer((f'Текущее время: {old_time}\n'
-                                  f'Введите новое время или нажмите кнопку '
+            await message.answer((f'Текущее время: '
+                                  f'{convert_time_to_read_format(old_time)}\n'
                                   f'Пропустить, если поле не '
                                   f'нужно редактировать'),
                                  reply_markup=skip_keyboard()
@@ -145,12 +152,12 @@ async def event_time_edit(message: types.Message, state: FSMContext):
         if not validate_time(event_time):
             await message.answer(
                 'Что то не так с введенным временем.\n'
-                'Сообщение дожно быть в формате ЧЧ-ММ '
-                '(например 12-00 или 23-59).'
+                'Сообщение дожно быть в формате ЧЧ:ММ '
+                '(например 12:00 или 23:59).'
             )
             return
         async with state.proxy() as payload:
-            payload['event_time'] = event_time
+            payload['event_time'] = convert_time_to_db_format(event_time)
             old_complexity = payload['event'][4]
             await EditEventStates.next()
             await message.answer((f'Текущая сложность: {old_complexity}\n'
@@ -202,9 +209,11 @@ async def event_payment_edit(message: types.Message, state: FSMContext):
         async with state.proxy() as payload:
             payload['payment'] = payload['event'][3]
             await EditEventStates.next()
+            read_date = convert_date_to_read_format(payload['event_date'])
+            read_time = convert_time_to_read_format(payload['event_time'])
             check_message = (f"<u>Подтвердите редактирование события:</u>\n\n"
-                             f"<b>Дата:</b> {payload['event_date']}\n"
-                             f"<b>Время:</b> {payload['event_time']}\n"
+                             f"<b>Дата:</b> {read_date}\n"
+                             f"<b>Время:</b> {read_time}\n"
                              f"<b>Событие:</b> {payload['name']}\n"
                              f"<b>Сложность:</b> {payload['complexity']}\n"
                              f"<b>Стоимость:</b> {payload['payment']}")
@@ -222,9 +231,11 @@ async def event_payment_edit(message: types.Message, state: FSMContext):
         async with state.proxy() as payload:
             payload['payment'] = payment
             await EditEventStates.next()
+            read_date = convert_date_to_read_format(payload['event_date'])
+            read_time = convert_time_to_read_format(payload['event_time'])
             check_message = (f"<u>Подтвердите редактирование события:</u>\n\n"
-                             f"<b>Дата:</b> {payload['event_date']}\n"
-                             f"<b>Время:</b> {payload['event_time']}\n"
+                             f"<b>Дата:</b> {read_date}\n"
+                             f"<b>Время:</b> {read_time}\n"
                              f"<b>Событие:</b> {payload['name']}\n"
                              f"<b>Сложность:</b> {payload['complexity']}\n"
                              f"<b>Стоимость:</b> {payload['payment']}")

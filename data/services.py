@@ -109,9 +109,11 @@ def make_user_calendar_message(data: list) -> str:
         return 'Календарь пуст.'
     base_message = ''
     for i in data:
+        date = convert_date_to_read_format(i[2])
+        time = convert_time_to_read_format(i[3])
         add_message = (
-            f'<b>Дата:</b>  {i[2]}\n'
-            f'<b>Время:</b>  {i[3]}\n'
+            f'<b>Дата:</b>  {date}\n'
+            f'<b>Время:</b>  {time}\n'
             f'<b>Событие:</b>  {i[1]}\n'
             f'<b>Сложность:</b>  {i[5]}\n'
             f'<b>Стоимость:</b>  {i[4]}\n\n'
@@ -126,8 +128,33 @@ def make_admin_calendar_message(data: list) -> str:
         return 'Календарь пуст.\n'
     base_message = ''
     for i in data:
+        date = convert_date_to_read_format(i[2])
         add_message = (
-            f'<b>{i[0]}.</b>  {i[1]}  {i[2]}\n'
+            f'<b>{i[0]}.</b>  {i[1]}  {date}\n'
             )
         base_message += add_message
     return base_message
+
+
+def convert_date_to_db_format(to_convert: str):
+    """Перевод даты в формат хранения для базы."""
+    day, month, year = to_convert.split('.')
+    return f'{year}-{month}-{day}'
+
+
+def convert_date_to_read_format(to_convert: str):
+    """Перевод даты в формат для вывода/ввода."""
+    year, month, day = to_convert.split('-')
+    return f'{day}.{month}.{year}'
+
+
+def convert_time_to_db_format(to_convert: str):
+    """Перевод времени в формат хранения для базы."""
+    hour, minute = to_convert.split(':')
+    return f'{hour}-{minute}'
+
+
+def convert_time_to_read_format(to_convert: str):
+    """Перевод времени в формат для вывода/ввода."""
+    hour, minute = to_convert.split('-')
+    return f'{hour}:{minute}'

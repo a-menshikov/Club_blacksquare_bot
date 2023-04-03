@@ -1,8 +1,10 @@
 from aiogram import types
 from aiogram.dispatcher import Dispatcher, FSMContext
 
-from data.services import (delete_event, get_calendar, get_event_info,
-                           is_admin, make_admin_calendar_message)
+from data.services import (convert_date_to_read_format,
+                           convert_time_to_read_format, delete_event,
+                           get_calendar, get_event_info, is_admin,
+                           make_admin_calendar_message)
 from keyboards.admin.keyboards import (approve_button, approve_keyboard,
                                        cancel_button, canсel_keyboard,
                                        delete_event_button,
@@ -37,9 +39,11 @@ async def delete_event_approve(message: types.Message, state: FSMContext):
     event_id = message.text.strip()
     data = get_event_info(event_id)
     if data:
+        read_date = convert_date_to_read_format(data[1])
+        read_time = convert_time_to_read_format(data[2])
         check_message = (f"<u>Подтвердите удаление события:</u>\n\n"
-                         f"<b>Дата:</b> {data[1]}\n"
-                         f"<b>Время:</b> {data[2]}\n"
+                         f"<b>Дата:</b> {read_date}\n"
+                         f"<b>Время:</b> {read_time}\n"
                          f"<b>Событие:</b> {data[0]}\n"
                          f"<b>Сложность:</b> {data[4]}\n"
                          f"<b>Стоимость:</b> {data[3]}")

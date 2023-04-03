@@ -1,7 +1,11 @@
 from aiogram import types
 from aiogram.dispatcher import Dispatcher, FSMContext
 
-from data.services import create_new_event, is_admin
+from data.services import (convert_date_to_db_format,
+                           convert_date_to_read_format,
+                           convert_time_to_db_format,
+                           convert_time_to_read_format, create_new_event,
+                           is_admin)
 from handlers.admin.validators import (validate_complexity, validate_date,
                                        validate_name, validate_payment,
                                        validate_time)
@@ -39,7 +43,7 @@ async def event_name_input(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
         data['name'] = name
     await NewEventStates.next()
-    await message.answer("Введите дату события в формате ГГГГ-ММ-ДД",
+    await message.answer("Введите дату события в формате ДД.ММ.ГГГГ",
                          reply_markup=canсel_keyboard())
 
 
@@ -49,14 +53,14 @@ async def event_date_input(message: types.Message, state: FSMContext):
     if not validate_date(event_date):
         await message.answer(
             'Что то не так с введенной датой.\n'
-            'Сообщение дожно быть в формате ГГГГ-ММ-ДД '
-            '(например 2026-04-13).'
+            'Сообщение дожно быть в формате ДД.ММ.ГГГГ'
+            '(например 13.04.2026).'
         )
         return
     async with state.proxy() as data:
-        data['event_date'] = event_date
+        data['event_date'] = convert_date_to_db_format(event_date)
     await NewEventStates.next()
-    await message.answer("Введите время события в формате ЧЧ-ММ",
+    await message.answer("Введите время события в формате ЧЧ:ММ",
                          reply_markup=canсel_keyboard())
 
 
@@ -66,12 +70,12 @@ async def event_time_input(message: types.Message, state: FSMContext):
     if not validate_time(event_time):
         await message.answer(
             'Что то не так с введенным временем.\n'
-            'Сообщение дожно быть в формате ЧЧ-ММ '
-            '(например 12-00 или 23-59).'
+            'Сообщение дожно быть в формате ЧЧ:ММ '
+            '(например 12:00 или 23:59).'
         )
         return
     async with state.proxy() as data:
-        data['event_time'] = event_time
+        data['event_time'] = convert_time_to_db_format(event_time)
     await NewEventStates.next()
     await message.answer("Введите ожидаемую сложность события",
                          reply_markup=canсel_keyboard())
@@ -109,9 +113,11 @@ async def event_payment_input(message: types.Message, state: FSMContext):
         data['payment'] = payment
         data['owner_id'] = telegram_id
     await NewEventStates.next()
+    read_date = convert_date_to_read_format(data['event_date'])
+    read_time = convert_time_to_read_format(data['event_time'])
     check_message = (f"<u>Подтвердите добавление события:</u>\n\n"
-                     f"<b>Дата:</b> {data['event_date']}\n"
-                     f"<b>Время:</b> {data['event_time']}\n"
+                     f"<b>Дата:</b> {read_date}\n"
+                     f"<b>Время:</b> {read_time}\n"
                      f"<b>Событие:</b> {data['name']}\n"
                      f"<b>Сложность:</b> {data['complexity']}\n"
                      f"<b>Стоимость:</b> {data['payment']}")
