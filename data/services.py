@@ -6,7 +6,7 @@ from config import timezone
 from loader import ADMIN, logger
 
 from .db_loader import db_session
-from .models import Event, User
+from .models import Event, User, UserNotificationStatus
 
 
 def is_user_exist_in_base(telegram_id: int) -> bool:
@@ -16,6 +16,23 @@ def is_user_exist_in_base(telegram_id: int) -> bool:
     if check:
         return True
     return False
+
+
+def get_all_users():
+    """Получить id всех пользователей."""
+    all_users = db_session.query(User.id).all()
+    return all_users
+
+
+def fill_notifications():
+    """Заполнение статусов подписки на уведомления."""
+    users = get_all_users()
+    for user in users:
+        user_id = user[0]
+        check = db_session.query(exists().where(
+            UserNotificationStatus.user_id == user_id)).scalar()
+        if not check:
+            create_new_notification(user_id)
 
 
 def is_admin(telegram_id: int) -> bool:
@@ -37,6 +54,14 @@ def create_new_event(data: dict) -> None:
     db_session.add(new_event)
     db_session.commit()
     logger.info(f"{data['owner_id']} создал новое событие {data['name']}")
+
+
+def create_new_notification(telegram_id: int) -> None:
+    """Создание подписки на уведомления"""
+    new_subscribe = UserNotificationStatus(user_id=telegram_id)
+    db_session.add(new_subscribe)
+    db_session.commit()
+    logger.info(f'Пользователь {telegram_id} подписался на уведомления')
 
 
 def delete_event(event_id: str) -> None:
