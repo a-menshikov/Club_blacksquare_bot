@@ -23,3 +23,10 @@ class Event(Base):
     complexity = Column(Text, nullable=False)
     payment = Column(Text, nullable=False)
     created_on = Column(Text, default=date.today)
+
+
+class UserNotificationStatus(Base):
+    """Статус подписки на уведомления."""
+    __tablename__ = 'notification_status'
+    user_id = Column(Integer, ForeignKey('users.id'), primary_key=True)
+    status = Column(Integer, default=1)
