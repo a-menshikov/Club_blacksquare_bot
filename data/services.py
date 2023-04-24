@@ -2,8 +2,8 @@ import datetime
 
 from sqlalchemy.sql import exists
 
-from config import timezone
-from loader import ADMIN, logger
+from config import timezone, delta_days_for_notification
+from loader import ADMIN, logger, bot
 
 from .db_loader import db_session
 from .models import Event, User, UserNotificationStatus
@@ -160,6 +160,15 @@ def get_user_notification_status(telegram_id: int):
     return False
 
 
+def get_users_for_notification():
+    """Получить пользователей с подпиской на уведомления."""
+    users = db_session.query(
+        UserNotificationStatus).where(
+            UserNotificationStatus.status == 1
+            ).all()
+    return users
+
+
 def make_user_calendar_message(data: list) -> str:
     """Формирование сообщения календаря для юзера"""
     if not data:
@@ -215,3 +224,55 @@ def convert_time_to_read_format(to_convert: str):
     """Перевод времени в формат для вывода/ввода."""
     hour, minute = to_convert.split('-')
     return f'{hour}:{minute}'
+
+
+def get_delta_date():
+    """Получить дату для проверки необходимости уведомления."""
+    return datetime.datetime.now(
+        timezone).date() + datetime.timedelta(
+        days=delta_days_for_notification)
+
+
+def get_events_for_notification():
+    """Получить события для уведомлений."""
+    check_date = get_delta_date()
+    events = db_session.query(
+        Event).where(
+            Event.event_date == check_date
+            ).all()
+    return events
+
+
+def make_notification_message(data: list) -> str:
+    """Формирование сообщения для уведомлений."""
+    base_message = '<b>Скоро играем:</b>\n\n'
+    for event in data:
+        date = convert_date_to_read_format(event.event_date)
+        time = convert_time_to_read_format(event.event_time)
+        add_message = (
+            f'<b>Дата:</b>  {date}\n'
+            f'<b>Время:</b>  {time}\n'
+            f'<b>Событие:</b>  {event.name}\n'
+            f'<b>Сложность:</b>  {event.complexity}\n'
+            f'<b>Стоимость:</b>  {event.payment}\n\n'
+            )
+        base_message += add_message
+    return base_message
+
+
+async def notificate():
+    """Отправка уведомлений о предстоящих событиях."""
+    logger.info("Запуск рассылки уведомлений")
+    events = get_events_for_notification()
+    if events:
+        users = get_users_for_notification()
+        if users:
+            notification_message = make_notification_message(events)
+            for user in users:
+                try:
+                    await bot.send_message(user.user_id, notification_message,
+                                           parse_mode='html')
+                    logger.info(f"Напоминание для {user.user_id} отправлено")
+                except Exception:
+                    logger.error(f"Напоминание для {user.user_id} не ушло")
+    logger.info("Рассылка уведомлений завершена")
