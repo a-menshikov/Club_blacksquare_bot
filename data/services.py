@@ -128,6 +128,19 @@ def get_event_info(id: str):
                 ).one_or_none()
 
 
+def get_user_notification_status(telegram_id: int):
+    """Получить статус подписки пользователя на уведомления."""
+    status = db_session.query(
+        UserNotificationStatus.status).where(
+            UserNotificationStatus.user_id == telegram_id
+            ).one_or_none()
+    if status is None:
+        return None
+    if status[0]:
+        return True
+    return False
+
+
 def make_user_calendar_message(data: list) -> str:
     """Формирование сообщения календаря для юзера"""
     if not data:
