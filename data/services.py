@@ -2,8 +2,8 @@ import datetime
 
 from sqlalchemy.sql import exists
 
-from config import timezone, delta_days_for_notification
-from loader import ADMIN, logger, bot
+from config import delta_days_for_notification, timezone
+from loader import ADMIN, bot, logger
 
 from .db_loader import db_session
 from .models import Event, User, UserNotificationStatus
