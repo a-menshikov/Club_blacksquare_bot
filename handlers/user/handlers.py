@@ -1,10 +1,12 @@
 from aiogram import types
 from aiogram.dispatcher import Dispatcher
 from data.services import (create_new_notification, create_new_user,
-                           get_calendar, is_admin, is_user_exist_in_base,
+                           get_calendar, get_user_notification_status,
+                           is_admin, is_user_exist_in_base,
                            make_user_calendar_message)
 from keyboards.user.keyboards import (calendar, in_main_menu,
-                                      menu_reply_keyboard, reg_button,
+                                      menu_reply_keyboard, notification,
+                                      notification_keyboard, reg_button,
                                       reg_keyboard)
 from loader import logger
 
@@ -66,8 +68,32 @@ async def get_future_calendar(message: types.Message):
                          reply_markup=menu_reply_keyboard(admin))
 
 
+async def notification_menu(message: types.Message):
+    """Переход в меню настройки уведомлений."""
+    telegram_id = message.from_user.id
+    check = get_user_notification_status(telegram_id)
+    admin = is_admin(telegram_id)
+    if check is None:
+        none_message = ("Что-то пошло не так. Попробуйте отправить боту "
+                        "/start и убедитесь, что вы зарегистрированы. Если "
+                        "не получится - обращайтесь к @Menshikov_AS")
+        await message.answer(none_message,
+                             reply_markup=menu_reply_keyboard(admin))
+    elif check:
+        yes_message = ("Вы подписаны на уведомления. Чтобы отключить "
+                       "уведомления, воспользуйтесь меню ниже.")
+        await message.answer(yes_message,
+                             reply_markup=notification_keyboard(check))
+    else:
+        no_message = ("Вы не подписаны на уведомления. Чтобы включить "
+                      "уведомления, воспользуйтесь меню ниже.")
+        await message.answer(no_message,
+                             reply_markup=notification_keyboard(check))
+
+
 def register_user_handlers(dp: Dispatcher):
     dp.register_message_handler(starter, commands=["start", "help"])
     dp.register_message_handler(main_menu, text=in_main_menu)
     dp.register_message_handler(registration, text=reg_button)
     dp.register_message_handler(get_future_calendar, text=calendar)
+    dp.register_message_handler(notification_menu, text=notification)
