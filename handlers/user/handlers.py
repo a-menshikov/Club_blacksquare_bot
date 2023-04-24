@@ -1,8 +1,8 @@
 from aiogram import types
 from aiogram.dispatcher import Dispatcher
-
-from data.services import (create_new_user, get_calendar, is_admin,
-                           is_user_exist_in_base, make_user_calendar_message)
+from data.services import (create_new_notification, create_new_user,
+                           get_calendar, is_admin, is_user_exist_in_base,
+                           make_user_calendar_message)
 from keyboards.user.keyboards import (calendar, in_main_menu,
                                       menu_reply_keyboard, reg_button,
                                       reg_keyboard)
@@ -47,6 +47,7 @@ async def registration(message: types.Message):
                              reply_markup=menu_reply_keyboard(admin))
     else:
         create_new_user(telegram_id)
+        create_new_notification(telegram_id)
         await message.answer("Welcome. Полный функционал доступен."
                              " Воспользуйтесь меню",
                              reply_markup=menu_reply_keyboard(admin))
