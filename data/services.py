@@ -89,6 +89,25 @@ def update_event(data: dict) -> None:
     logger.info(f"Отредактировано событие {data['event_id']}")
 
 
+def notification_switcher(telegram_id: int):
+    """Переключение статуса подписки на уведомления."""
+    check = get_user_notification_status(telegram_id)
+    if check is None:
+        return False
+    else:
+        db_session.query(UserNotificationStatus).filter(
+            UserNotificationStatus.user_id == telegram_id).update(
+                {
+                    'status': not check,
+                },
+                synchronize_session='fetch'
+                )
+        db_session.commit()
+        logger.info(f"Пользователь {telegram_id} изменил "
+                    f"статус уведомлений на {not check}")
+        return True
+
+
 def get_calendar(future: bool = False) -> list:
     """Получить список событий.
     Eсли future==True - только будущие."""
