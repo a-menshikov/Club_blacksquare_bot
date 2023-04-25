@@ -3,6 +3,7 @@ import datetime
 from sqlalchemy.sql import exists
 
 from config import delta_days_for_notification, timezone
+from keyboards.user.keyboards import menu_reply_keyboard
 from loader import ADMIN, bot, logger
 
 from .db_loader import db_session
@@ -245,7 +246,7 @@ def get_events_for_notification():
 
 def make_notification_message(data: list) -> str:
     """Формирование сообщения для уведомлений."""
-    base_message = '<b>Скоро играем:</b>\n\n'
+    base_message = '<b>Напоминание:</b>\n\n'
     for event in data:
         date = convert_date_to_read_format(event.event_date)
         time = convert_time_to_read_format(event.event_time)
@@ -257,6 +258,8 @@ def make_notification_message(data: list) -> str:
             f'<b>Стоимость:</b>  {event.payment}\n\n'
             )
         base_message += add_message
+    base_message += ('Отключить регулярные уведомления можно в меню '
+                     '"Настройка уведомлений"')
     return base_message
 
 
@@ -270,8 +273,11 @@ async def notificate():
             notification_message = make_notification_message(events)
             for user in users:
                 try:
-                    await bot.send_message(user.user_id, notification_message,
-                                           parse_mode='html')
+                    admin = is_admin(user.user_id)
+                    await bot.send_message(
+                        user.user_id, notification_message,
+                        parse_mode='html',
+                        reply_markup=menu_reply_keyboard(admin))
                     logger.info(f"Напоминание для {user.user_id} отправлено")
                 except Exception:
                     logger.error(f"Напоминание для {user.user_id} не ушло")
