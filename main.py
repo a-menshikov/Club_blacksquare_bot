@@ -28,7 +28,7 @@ async def on_startup(_):
 async def scheduler():
     """Расписание выполнения задач."""
     scheduler = aioschedule.Scheduler()
-    scheduler.every().day.at("11:45").do(notificate)
+    scheduler.every().day.at("09:00").do(notificate)
     while True:
         await scheduler.run_pending()
         await asyncio.sleep(1)
