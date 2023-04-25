@@ -1,4 +1,5 @@
 import datetime
+from typing import Optional
 
 from sqlalchemy.sql import exists
 
@@ -19,13 +20,13 @@ def is_user_exist_in_base(telegram_id: int) -> bool:
     return False
 
 
-def get_all_users():
+def get_all_users() -> list:
     """Получить id всех пользователей."""
     all_users = db_session.query(User.id).all()
     return all_users
 
 
-def fill_notifications():
+def fill_notifications() -> None:
     """Заполнение статусов подписки на уведомления."""
     users = get_all_users()
     for user in users:
@@ -90,7 +91,7 @@ def update_event(data: dict) -> None:
     logger.info(f"Отредактировано событие {data['event_id']}")
 
 
-def notification_switcher(telegram_id: int):
+def notification_switcher(telegram_id: int) -> bool:
     """Переключение статуса подписки на уведомления."""
     check = get_user_notification_status(telegram_id)
     if check is None:
@@ -135,7 +136,7 @@ def get_calendar(future: bool = False) -> list:
             ).order_by(Event.event_date).all()
 
 
-def get_event_info(id: str):
+def get_event_info(id: str) -> list:
     """Получить информацию о событии по id."""
     return db_session.query(
             Event.name,
@@ -148,7 +149,7 @@ def get_event_info(id: str):
                 ).one_or_none()
 
 
-def get_user_notification_status(telegram_id: int):
+def get_user_notification_status(telegram_id: int) -> bool:
     """Получить статус подписки пользователя на уведомления."""
     status = db_session.query(
         UserNotificationStatus.status).where(
@@ -161,7 +162,7 @@ def get_user_notification_status(telegram_id: int):
     return False
 
 
-def get_users_for_notification():
+def get_users_for_notification() -> list[Optional[UserNotificationStatus]]:
     """Получить пользователей с подпиской на уведомления."""
     users = db_session.query(
         UserNotificationStatus).where(
@@ -227,14 +228,14 @@ def convert_time_to_read_format(to_convert: str):
     return f'{hour}:{minute}'
 
 
-def get_delta_date():
+def get_delta_date() -> datetime.date:
     """Получить дату для проверки необходимости уведомления."""
     return datetime.datetime.now(
         timezone).date() + datetime.timedelta(
         days=delta_days_for_notification)
 
 
-def get_events_for_notification():
+def get_events_for_notification() -> list[Optional[Event]]:
     """Получить события для уведомлений."""
     check_date = get_delta_date()
     events = db_session.query(
@@ -244,7 +245,7 @@ def get_events_for_notification():
     return events
 
 
-def make_notification_message(data: list) -> str:
+def make_notification_message(data: list[Event]) -> str:
     """Формирование сообщения для уведомлений."""
     base_message = '<b>Напоминание:</b>\n\n'
     for event in data:
@@ -263,7 +264,7 @@ def make_notification_message(data: list) -> str:
     return base_message
 
 
-async def notificate():
+async def notificate() -> None:
     """Отправка уведомлений о предстоящих событиях."""
     logger.info("Запуск рассылки уведомлений")
     events = get_events_for_notification()
