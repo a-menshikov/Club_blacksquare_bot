@@ -33,6 +33,8 @@ def menu_reply_keyboard(admin: bool = False):
     markup = ReplyKeyboardMarkup(resize_keyboard=True, selective=True)
     markup.row(
         KeyboardButton(calendar),
+    )
+    markup.row(
         KeyboardButton(notification),
     )
     if admin:
