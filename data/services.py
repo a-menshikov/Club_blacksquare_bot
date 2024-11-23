@@ -78,15 +78,18 @@ def delete_event(event_id: str) -> None:
 def update_event(data: dict) -> None:
     """Обновление события"""
     db_session.query(Event).filter(
-        Event.id == data['event_id']).update(
-            {'name': data['name'],
-             'event_date': data['event_date'],
-             'event_time': data['event_time'],
-             'payment': data['payment'],
-             'complexity': data['complexity'],
-             },
-            synchronize_session='fetch'
-            )
+        Event.id == data['event_id']
+    ).update(
+        {
+            'name': data['name'],
+            'event_date': data['event_date'],
+            'event_time': data['event_time'],
+            'payment': data['payment'],
+            'complexity': data['complexity'],
+            'comment': data['comment'],
+        },
+        synchronize_session='fetch',
+    )
     db_session.commit()
     logger.info(f"Отредактировано событие {data['event_id']}")
 
@@ -122,9 +125,10 @@ def get_calendar(future: bool = False) -> list:
             Event.event_time,
             Event.payment,
             Event.complexity,
-            ).where(
-                Event.event_date >= today_full_date
-                ).order_by(Event.event_date).all()
+            Event.comment,
+        ).where(
+            Event.event_date >= today_full_date
+        ).order_by(Event.event_date).all()
     else:
         return db_session.query(
             Event.id,
@@ -133,20 +137,20 @@ def get_calendar(future: bool = False) -> list:
             Event.event_time,
             Event.payment,
             Event.complexity,
-            ).order_by(Event.event_date).all()
+            Event.comment,
+        ).order_by(Event.event_date).all()
 
 
 def get_event_info(id: str) -> list:
     """Получить информацию о событии по id."""
     return db_session.query(
-            Event.name,
-            Event.event_date,
-            Event.event_time,
-            Event.payment,
-            Event.complexity,
-            ).where(
-                Event.id == id
-                ).one_or_none()
+        Event.name,
+        Event.event_date,
+        Event.event_time,
+        Event.payment,
+        Event.complexity,
+        Event.comment,
+    ).where(Event.id == id).one_or_none()
 
 
 def get_user_notification_status(telegram_id: int) -> bool:
@@ -179,12 +183,22 @@ def make_user_calendar_message(data: list) -> str:
     for i in data:
         date = convert_date_to_read_format(i[2])
         time = convert_time_to_read_format(i[3])
-        add_message = (
-            f'<b>Дата:</b>  {date}\n'
-            f'<b>Время:</b>  {time}\n'
-            f'<b>Событие:</b>  {i[1]}\n'
-            f'<b>Сложность:</b>  {i[5]}\n'
-            f'<b>Стоимость:</b>  {i[4]}\n\n'
+        if i[6] == '':
+            add_message = (
+                f'<b>Дата:</b>  {date}\n'
+                f'<b>Время:</b>  {time}\n'
+                f'<b>Событие:</b>  {i[1]}\n'
+                f'<b>Сложность:</b>  {i[5]}\n'
+                f'<b>Стоимость:</b>  {i[4]}\n\n'
+            )
+        else:
+            add_message = (
+                f'<b>Дата:</b>  {date}\n'
+                f'<b>Время:</b>  {time}\n'
+                f'<b>Событие:</b>  {i[1]}\n'
+                f'<b>Сложность:</b>  {i[5]}\n'
+                f'<b>Стоимость:</b>  {i[4]}\n'
+                f'<b>Комментарий:</b>  {i[6]}\n\n'
             )
         base_message += add_message
     return base_message
@@ -251,12 +265,22 @@ def make_notification_message(data: list[Event]) -> str:
     for event in data:
         date = convert_date_to_read_format(event.event_date)
         time = convert_time_to_read_format(event.event_time)
-        add_message = (
-            f'<b>Дата:</b>  {date}\n'
-            f'<b>Время:</b>  {time}\n'
-            f'<b>Событие:</b>  {event.name}\n'
-            f'<b>Сложность:</b>  {event.complexity}\n'
-            f'<b>Стоимость:</b>  {event.payment}\n\n'
+        if event.comment == '':
+            add_message = (
+                f'<b>Дата:</b>  {date}\n'
+                f'<b>Время:</b>  {time}\n'
+                f'<b>Событие:</b>  {event.name}\n'
+                f'<b>Сложность:</b>  {event.complexity}\n'
+                f'<b>Стоимость:</b>  {event.payment}\n\n'
+            )
+        else:
+            add_message = (
+                f'<b>Дата:</b>  {date}\n'
+                f'<b>Время:</b>  {time}\n'
+                f'<b>Событие:</b>  {event.name}\n'
+                f'<b>Сложность:</b>  {event.complexity}\n'
+                f'<b>Стоимость:</b>  {event.payment}\n'
+                f'<b>Комментарий:</b>  {event.comment}\n\n'
             )
         base_message += add_message
     base_message += ('Отключить регулярные уведомления можно в меню '
