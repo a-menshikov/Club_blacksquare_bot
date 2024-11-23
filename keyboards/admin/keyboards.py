@@ -8,6 +8,8 @@ edit_event_button = "Редактировать событие"
 cancel_button = "Отмена"
 approve_button = "Подтвердить"
 skip_button = "Пропустить"
+skip_comment_button = "Без комментария"
+clear_comment = "Очистить комментарий"
 
 
 def main_admin_menu_keyboard():
@@ -27,6 +29,14 @@ def canсel_keyboard():
     return markup
 
 
+def canсel_with_skip_keyboard():
+    """Клавиатура отмены процесса с возможностью скипнуть коммент."""
+    markup = ReplyKeyboardMarkup(resize_keyboard=True, selective=True)
+    markup.add(KeyboardButton(cancel_button))
+    markup.add(KeyboardButton(skip_comment_button))
+    return markup
+
+
 def approve_keyboard():
     """Клавиатура подтверждения процесса."""
     markup = ReplyKeyboardMarkup(resize_keyboard=True, selective=True)
@@ -38,6 +48,15 @@ def approve_keyboard():
 def skip_keyboard():
     """Клавиатура пропуска этапа процесса."""
     markup = ReplyKeyboardMarkup(resize_keyboard=True, selective=True)
+    markup.add(KeyboardButton(skip_button))
+    markup.add(KeyboardButton(cancel_button))
+    return markup
+
+
+def skip_with_clear_keyboard():
+    """Клавиатура пропуска этапа процесса с очисткой коммента."""
+    markup = ReplyKeyboardMarkup(resize_keyboard=True, selective=True)
+    markup.add(KeyboardButton(clear_comment))
     markup.add(KeyboardButton(skip_button))
     markup.add(KeyboardButton(cancel_button))
     return markup

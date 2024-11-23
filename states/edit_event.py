@@ -9,4 +9,5 @@ class EditEventStates(StatesGroup):
     event_time = State()
     complexity = State()
     payment = State()
+    comment = State()
     approve = State()

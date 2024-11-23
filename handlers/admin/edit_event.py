@@ -7,14 +7,13 @@ from data.services import (convert_date_to_db_format,
                            convert_time_to_read_format, get_calendar,
                            get_event_info, is_admin,
                            make_admin_calendar_message, update_event)
-from handlers.admin.validators import (validate_complexity, validate_date,
-                                       validate_name, validate_payment,
+from handlers.admin.validators import (validate_date, validate_string_field,
                                        validate_time)
 from keyboards.admin.keyboards import (approve_button, approve_keyboard,
                                        cancel_button, canсel_keyboard,
-                                       edit_event_button,
+                                       clear_comment, edit_event_button,
                                        main_admin_menu_keyboard, skip_button,
-                                       skip_keyboard)
+                                       skip_keyboard, skip_with_clear_keyboard)
 from keyboards.user.keyboards import menu_reply_keyboard
 from loader import logger
 from states.edit_event import EditEventStates
@@ -79,7 +78,7 @@ async def event_name_edit(message: types.Message, state: FSMContext):
                                  reply_markup=skip_keyboard()
                                  )
     else:
-        if not validate_name(name):
+        if not validate_string_field(name):
             await message.answer(
                 'Что то не так с введенным текстом.\n'
                 'Название не должно содержать символы <> '
@@ -183,7 +182,7 @@ async def event_complexity_edit(message: types.Message, state: FSMContext):
                                  reply_markup=skip_keyboard()
                                  )
     else:
-        if not validate_complexity(event_complexity):
+        if not validate_string_field(event_complexity):
             await message.answer(
                 'Что то не так с введенным текстом.\n'
                 'Значение не должно содержать символы <> '
@@ -208,20 +207,9 @@ async def event_payment_edit(message: types.Message, state: FSMContext):
     if payment == skip_button:
         async with state.proxy() as payload:
             payload['payment'] = payload['event'][3]
-            await EditEventStates.next()
-            read_date = convert_date_to_read_format(payload['event_date'])
-            read_time = convert_time_to_read_format(payload['event_time'])
-            check_message = (f"<u>Подтвердите редактирование события:</u>\n\n"
-                             f"<b>Дата:</b> {read_date}\n"
-                             f"<b>Время:</b> {read_time}\n"
-                             f"<b>Событие:</b> {payload['name']}\n"
-                             f"<b>Сложность:</b> {payload['complexity']}\n"
-                             f"<b>Стоимость:</b> {payload['payment']}")
-            await message.answer(check_message,
-                                 parse_mode='html',
-                                 reply_markup=approve_keyboard())
+            old_comment = payload['event'][5]
     else:
-        if not validate_payment(payment):
+        if not validate_string_field(payment):
             await message.answer(
                 'Что то не так с введенной стоимость.\n'
                 'Текст не должен содержать символы <> '
@@ -230,18 +218,72 @@ async def event_payment_edit(message: types.Message, state: FSMContext):
             return
         async with state.proxy() as payload:
             payload['payment'] = payment
-            await EditEventStates.next()
-            read_date = convert_date_to_read_format(payload['event_date'])
-            read_time = convert_time_to_read_format(payload['event_time'])
-            check_message = (f"<u>Подтвердите редактирование события:</u>\n\n"
-                             f"<b>Дата:</b> {read_date}\n"
-                             f"<b>Время:</b> {read_time}\n"
-                             f"<b>Событие:</b> {payload['name']}\n"
-                             f"<b>Сложность:</b> {payload['complexity']}\n"
-                             f"<b>Стоимость:</b> {payload['payment']}")
-            await message.answer(check_message,
-                                 parse_mode='html',
-                                 reply_markup=approve_keyboard())
+            old_comment = payload['event'][5]
+
+    await EditEventStates.next()
+
+    if old_comment == '':
+        await message.answer(
+            (
+                'Текущий комментарий не заполнен.\n'
+                'Введите новый комментарий или нажмите '
+                'кнопку Пропустить, если поле не '
+                'нужно редактировать'
+            ),
+            reply_markup=skip_keyboard()
+        )
+    else:
+        await message.answer(
+            (
+                f'Текущий комментарий: {old_comment}\n'
+                f'Введите новый комментарий.\nНажмите '
+                f'кнопку "Пропустить", если поле не '
+                f'нужно редактировать, или кнопку "Очистить комментарий", '
+                f'если поле нужно сделать пустым.'
+            ),
+            reply_markup=skip_with_clear_keyboard()
+        )
+
+
+async def event_comment_edit(message: types.Message, state: FSMContext):
+    """Ввод нового комментария события."""
+    comment = message.text
+
+    if comment == skip_button:
+        async with state.proxy() as payload:
+            payload['comment'] = payload['event'][5]
+    elif comment == clear_comment:
+        async with state.proxy() as payload:
+            payload['comment'] = ''
+    else:
+        if not validate_string_field(comment):
+            await message.answer(
+                'Что то не так с введенной стоимость.\n'
+                'Текст не должен содержать символы <> '
+                'и быть не длиннее 1000 символов.'
+            )
+            return
+        async with state.proxy() as payload:
+            payload['comment'] = comment
+
+    await EditEventStates.next()
+
+    read_date = convert_date_to_read_format(payload['event_date'])
+    read_time = convert_time_to_read_format(payload['event_time'])
+
+    check_message = (
+        f"<u>Подтвердите редактирование события:</u>\n\n"
+        f"<b>Дата:</b> {read_date}\n"
+        f"<b>Время:</b> {read_time}\n"
+        f"<b>Событие:</b> {payload['name']}\n"
+        f"<b>Стоимость:</b> {payload['payment']}\n"
+        f"<b>Комментарий:</b> {payload['comment']}"
+    )
+    await message.answer(
+        check_message,
+        parse_mode='html',
+        reply_markup=approve_keyboard(),
+    )
 
 
 async def edit_event_approve(message: types.Message, state: FSMContext):
@@ -285,5 +327,7 @@ def register_edit_event_handlers(dp: Dispatcher):
                                 state=EditEventStates.complexity)
     dp.register_message_handler(event_payment_edit,
                                 state=EditEventStates.payment)
+    dp.register_message_handler(event_comment_edit,
+                                state=EditEventStates.comment)
     dp.register_message_handler(edit_event_approve,
                                 state=EditEventStates.approve)

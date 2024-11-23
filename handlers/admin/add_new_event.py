@@ -6,13 +6,14 @@ from data.services import (convert_date_to_db_format,
                            convert_time_to_db_format,
                            convert_time_to_read_format, create_new_event,
                            is_admin)
-from handlers.admin.validators import (validate_complexity, validate_date,
-                                       validate_name, validate_payment,
+from handlers.admin.validators import (validate_date, validate_string_field,
                                        validate_time)
 from keyboards.admin.keyboards import (add_event, approve_button,
                                        approve_keyboard, cancel_button,
                                        canсel_keyboard,
-                                       main_admin_menu_keyboard)
+                                       canсel_with_skip_keyboard,
+                                       main_admin_menu_keyboard,
+                                       skip_comment_button)
 from keyboards.user.keyboards import menu_reply_keyboard
 from states.add_event import NewEventStates
 
@@ -33,7 +34,7 @@ async def new_event(message: types.Message):
 async def event_name_input(message: types.Message, state: FSMContext):
     """Ввод названия события."""
     name = message.text
-    if not validate_name(name):
+    if not validate_string_field(name):
         await message.answer(
             'Что то не так с введенным текстом.\n'
             'Название не должно содержать символы <> '
@@ -84,7 +85,7 @@ async def event_time_input(message: types.Message, state: FSMContext):
 async def event_complexity_input(message: types.Message, state: FSMContext):
     """Ввод сложности события."""
     event_complexity = message.text.strip()
-    if not validate_complexity(event_complexity):
+    if not validate_string_field(event_complexity):
         await message.answer(
             'Что то не так с введенной сложностью.\n'
             'Текст не должен содержать символы <> '
@@ -101,8 +102,7 @@ async def event_complexity_input(message: types.Message, state: FSMContext):
 async def event_payment_input(message: types.Message, state: FSMContext):
     """Ввод стоимости события."""
     payment = message.text.strip()
-    telegram_id = message.from_user.id
-    if not validate_payment(payment):
+    if not validate_string_field(payment):
         await message.answer(
             'Что то не так с введенной стоимость.\n'
             'Текст не должен содержать символы <> '
@@ -111,16 +111,46 @@ async def event_payment_input(message: types.Message, state: FSMContext):
         return
     async with state.proxy() as data:
         data['payment'] = payment
-        data['owner_id'] = telegram_id
     await NewEventStates.next()
+    await message.answer("Введите комментарий к событию, или "
+                         "оставьте это поле пустым.",
+                         reply_markup=canсel_with_skip_keyboard())
+
+
+async def event_comment_input(message: types.Message, state: FSMContext):
+    """Ввод комментария к событию."""
+    comment = message.text.strip()
+    telegram_id = message.from_user.id
+
+    if comment == skip_comment_button:
+        comment = ''
+    else:
+        if not validate_string_field(comment):
+            await message.answer(
+                'Что то не так с комментарием.\n'
+                'Текст не должен содержать символы <> '
+                'и быть не длиннее 1000 символов.'
+            )
+            return
+    async with state.proxy() as data:
+        data['comment'] = comment
+        data['owner_id'] = telegram_id
+
     read_date = convert_date_to_read_format(data['event_date'])
     read_time = convert_time_to_read_format(data['event_time'])
-    check_message = (f"<u>Подтвердите добавление события:</u>\n\n"
-                     f"<b>Дата:</b> {read_date}\n"
-                     f"<b>Время:</b> {read_time}\n"
-                     f"<b>Событие:</b> {data['name']}\n"
-                     f"<b>Сложность:</b> {data['complexity']}\n"
-                     f"<b>Стоимость:</b> {data['payment']}")
+
+    check_message = (
+        f"<u>Подтвердите добавление события:</u>\n\n"
+        f"<b>Дата:</b> {read_date}\n"
+        f"<b>Время:</b> {read_time}\n"
+        f"<b>Событие:</b> {data['name']}\n"
+        f"<b>Сложность:</b> {data['complexity']}\n"
+        f"<b>Стоимость:</b> {data['payment']}\n"
+        f"<b>Комментарий:</b> {data['comment']}"
+    )
+
+    await NewEventStates.next()
+
     await message.answer(check_message,
                          parse_mode='html',
                          reply_markup=approve_keyboard())
@@ -163,5 +193,7 @@ def register_add_event_handlers(dp: Dispatcher):
                                 state=NewEventStates.complexity)
     dp.register_message_handler(event_payment_input,
                                 state=NewEventStates.payment)
+    dp.register_message_handler(event_comment_input,
+                                state=NewEventStates.comment)
     dp.register_message_handler(new_event_approve,
                                 state=NewEventStates.approve)
