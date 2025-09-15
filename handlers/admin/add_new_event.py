@@ -11,6 +11,7 @@ from handlers.admin.validators import (validate_date, validate_string_field,
 from keyboards.admin.keyboards import (add_event, approve_button,
                                        approve_keyboard, cancel_button,
                                        canсel_keyboard,
+                                       canсel_with_default_time_button_keyboard,
                                        canсel_with_skip_keyboard,
                                        main_admin_menu_keyboard,
                                        skip_comment_button)
@@ -62,7 +63,7 @@ async def event_date_input(message: types.Message, state: FSMContext):
         data['event_date'] = convert_date_to_db_format(event_date)
     await NewEventStates.next()
     await message.answer("Введите время события в формате ЧЧ:ММ",
-                         reply_markup=canсel_keyboard())
+                         reply_markup=canсel_with_default_time_button_keyboard())
 
 
 async def event_time_input(message: types.Message, state: FSMContext):

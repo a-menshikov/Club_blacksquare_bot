@@ -13,7 +13,8 @@ from keyboards.admin.keyboards import (approve_button, approve_keyboard,
                                        cancel_button, canсel_keyboard,
                                        clear_comment, edit_event_button,
                                        main_admin_menu_keyboard, skip_button,
-                                       skip_keyboard, skip_with_clear_keyboard)
+                                       skip_keyboard, skip_with_clear_keyboard,
+                                       skip_with_default_time_button_keyboard)
 from keyboards.user.keyboards import menu_reply_keyboard
 from loader import logger
 from states.edit_event import EditEventStates
@@ -129,7 +130,7 @@ async def event_date_edit(message: types.Message, state: FSMContext):
                                   f'{convert_time_to_read_format(old_time)}\n'
                                   f'Пропустить, если поле не '
                                   f'нужно редактировать'),
-                                 reply_markup=skip_keyboard()
+                                 reply_markup=skip_with_default_time_button_keyboard()
                                  )
 
 

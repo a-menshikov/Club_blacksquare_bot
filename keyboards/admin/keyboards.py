@@ -10,6 +10,7 @@ approve_button = "Подтвердить"
 skip_button = "Пропустить"
 skip_comment_button = "Без комментария"
 clear_comment = "Очистить комментарий"
+default_time_button = "12:00"
 
 
 def main_admin_menu_keyboard():
@@ -25,6 +26,14 @@ def main_admin_menu_keyboard():
 def canсel_keyboard():
     """Клавиатура отмены процесса."""
     markup = ReplyKeyboardMarkup(resize_keyboard=True, selective=True)
+    markup.add(KeyboardButton(cancel_button))
+    return markup
+
+
+def canсel_with_default_time_button_keyboard():
+    """Клавиатура отмены процесса с добавленной кнопкой дефолтного времени."""
+    markup = ReplyKeyboardMarkup(resize_keyboard=True, selective=True)
+    markup.add(KeyboardButton(default_time_button))
     markup.add(KeyboardButton(cancel_button))
     return markup
 
@@ -49,6 +58,16 @@ def skip_keyboard():
     """Клавиатура пропуска этапа процесса."""
     markup = ReplyKeyboardMarkup(resize_keyboard=True, selective=True)
     markup.add(KeyboardButton(skip_button))
+    markup.add(KeyboardButton(cancel_button))
+    return markup
+
+
+def skip_with_default_time_button_keyboard():
+    """Клавиатура пропуска этапа процесса
+    с добавленной кнопкой дефолтного времени."""
+    markup = ReplyKeyboardMarkup(resize_keyboard=True, selective=True)
+    markup.add(KeyboardButton(skip_button))
+    markup.add(KeyboardButton(default_time_button))
     markup.add(KeyboardButton(cancel_button))
     return markup
 
