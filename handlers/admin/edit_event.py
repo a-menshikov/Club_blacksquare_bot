@@ -112,7 +112,7 @@ async def event_date_edit(message: types.Message, state: FSMContext):
                                   f'Введите новое время или нажмите кнопку '
                                   f'Пропустить, если поле не '
                                   f'нужно редактировать'),
-                                 reply_markup=skip_keyboard()
+                                 reply_markup=skip_with_default_time_button_keyboard()
                                  )
     else:
         if not validate_date(event_date):
