@@ -11,14 +11,15 @@ skip_button = "Пропустить"
 skip_comment_button = "Без комментария"
 clear_comment = "Очистить комментарий"
 default_time_button = "12:00"
+own_game_distrib = "Распределить тройки"
 
 
 def main_admin_menu_keyboard():
     """Клавиатура регистрации."""
     markup = ReplyKeyboardMarkup(resize_keyboard=True, selective=True)
     markup.add(KeyboardButton(add_event))
-    markup.add(KeyboardButton(edit_event_button))
-    markup.add(KeyboardButton(delete_event_button))
+    markup.row(KeyboardButton(edit_event_button), KeyboardButton(delete_event_button))
+    markup.add(KeyboardButton(own_game_distrib))
     markup.add(KeyboardButton(in_main_menu))
     return markup
 

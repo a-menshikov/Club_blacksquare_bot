@@ -288,6 +288,74 @@ def make_notification_message(data: list[Event]) -> str:
     return base_message
 
 
+def parse_players(text: str) -> list[tuple]:
+    """Разобрать сообщение на список игроков."""
+    players = []
+    for idx, line in enumerate(text.strip().split('\n')):
+        parts = line.strip().split()
+        try:
+            if len(parts) < 2:
+                raise ValueError
+            score = int(parts[-1])
+            name = ' '.join(parts[:-1])
+            players.append((name, score))
+        except ValueError:
+            raise ValueError(
+                f'Проблема в строке номер {idx}: "{line}"\n'
+                'Неполная строка или балл не в формате целого числа.\n'
+            )
+    if len(players) < 6:
+        raise ValueError(
+            'В списке мало игроков для распределения. Не балуйся!\n'
+        )
+
+    return players
+
+
+def make_triples(players: list[tuple]) -> list[list[tuple]]:
+    """Сделать тройки из списка игроков."""
+    players = sorted(players, key=lambda x: x[1], reverse=True)
+    n = len(players)
+    num_groups = n // 3
+
+    # Делим на 3 части: топ, середина, низ
+    part_size = num_groups
+    top = players[:part_size]
+    middle = players[part_size:2*part_size]
+    bottom = players[2*part_size:]
+
+    # Формируем тройки из соответствующих позиций
+    triples = []
+    for i in range(num_groups):
+        triple = []
+        for part in [top, middle, bottom]:
+            triple.append(part[i])
+        triples.append(triple)
+
+    # Остаток распределяем равномерно как четвертых
+    remainder_start = 3 * part_size
+    remainder = players[remainder_start:]
+    remainder = remainder[::-1]
+    for i, extra in enumerate(remainder, start=1):
+        group_idx = i * -1
+        triples[group_idx].append(extra)
+
+    return triples
+
+
+def make_triple_message(triples: list[list[tuple]]) -> str:
+    """Сформировать сообщение с тройками."""
+    message = ''
+
+    for i, triple in enumerate(triples):
+        message += f"\nГруппа {i+1} ({len(triple)} чел.):"
+        for name, score in triple:
+            message += f"\n  • {name}: {score}"
+        message += '\n'
+
+    return message
+
+
 async def notificate() -> None:
     """Отправка уведомлений о предстоящих событиях."""
     logger.info("Запуск рассылки уведомлений")
