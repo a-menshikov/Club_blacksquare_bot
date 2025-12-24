@@ -12,6 +12,8 @@ skip_comment_button = "Без комментария"
 clear_comment = "Очистить комментарий"
 default_time_button = "12:00"
 own_game_distrib = "Распределить тройки"
+own_game_order_type = "1. По порядку"
+own_game_snake_type = "2. Змейкой"
 
 
 def main_admin_menu_keyboard():
@@ -21,6 +23,14 @@ def main_admin_menu_keyboard():
     markup.row(KeyboardButton(edit_event_button), KeyboardButton(delete_event_button))
     markup.add(KeyboardButton(own_game_distrib))
     markup.add(KeyboardButton(in_main_menu))
+    return markup
+
+
+def own_game_type_keyboard():
+    """Выбор типа распределения участников Своей Игры."""
+    markup = ReplyKeyboardMarkup(resize_keyboard=True, selective=True)
+    markup.row(KeyboardButton(own_game_order_type), KeyboardButton(own_game_snake_type))
+    markup.add(KeyboardButton(cancel_button))
     return markup
 
 

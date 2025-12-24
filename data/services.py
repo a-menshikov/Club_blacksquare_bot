@@ -313,7 +313,7 @@ def parse_players(text: str) -> list[tuple]:
 
 
 def make_triples(players: list[tuple]) -> list[list[tuple]]:
-    """Сделать тройки из списка игроков."""
+    """Сделать тройки из списка игроков. Метод - по порядку."""
     players = sorted(players, key=lambda x: x[1], reverse=True)
     n = len(players)
     num_groups = n // 3
@@ -339,6 +339,33 @@ def make_triples(players: list[tuple]) -> list[list[tuple]]:
     for i, extra in enumerate(remainder, start=1):
         group_idx = i * -1
         triples[group_idx].append(extra)
+
+    return triples
+
+
+def make_triples_snake(players: list[tuple]) -> list[list[tuple]]:
+    """Сделать тройки из списка игроков. Метод - змейкой."""
+    players = sorted(players, key=lambda x: x[1], reverse=True)
+    n = len(players)
+    num_groups = n // 3
+
+    # Инициализируем группы
+    triples = [[] for _ in range(num_groups)]
+
+    # Раздаём змейкой: 0→1→2→...→(k-1)→(k-1)→...→1→0→0→1→...
+    direction = 1   # +1 вниз, -1 вверх
+    idx = 0         # текущая группа
+
+    for player in players:
+        triples[idx].append(player)
+        idx += direction
+        # Меняем направление, когда дошли до края
+        if idx == num_groups:
+            idx = num_groups - 1
+            direction = -1
+        elif idx < 0:
+            idx = 0
+            direction = 1
 
     return triples
 
