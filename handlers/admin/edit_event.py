@@ -118,8 +118,8 @@ async def event_date_edit(message: types.Message, state: FSMContext):
         if not validate_date(event_date):
             await message.answer(
                 'Что то не так с введенной датой.\n'
-                'Сообщение дожно быть в формате ДД.ММ.ГГГГ'
-                '(например 13.04.2026).'
+                'Сообщение дожно быть в формате ДД.ММ.ГГ'
+                '(например 13.04.26).'
                 )
             return
         async with state.proxy() as payload:

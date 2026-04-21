@@ -221,6 +221,7 @@ def make_admin_calendar_message(data: list) -> str:
 def convert_date_to_db_format(to_convert: str):
     """Перевод даты в формат хранения для базы."""
     day, month, year = to_convert.split('.')
+    year = '20' + year
     return f'{year}-{month}-{day}'
 
 
