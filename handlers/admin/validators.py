@@ -1,14 +1,27 @@
 import re
+from datetime import datetime
 
 
 def validate_date(message):
-    """Валидация введенных данных в дате события."""
-    return re.fullmatch(r"^[01-9]{2}.[01-9]{2}.[01-9]{2}$", message)
+    """Дата события: строго ДД.ММ.ГГ и такая дата существует."""
+    if not re.fullmatch(r"\d{2}\.\d{2}\.\d{2}", message):
+        return False
+    try:
+        datetime.strptime(message, '%d.%m.%y')
+    except ValueError:
+        return False
+    return True
 
 
 def validate_time(message):
-    """Валидация введенных данных во времени события."""
-    return re.fullmatch(r"^[01-9]{2}:[01-9]{2}$", message)
+    """Время события: строго ЧЧ:ММ и такое время существует."""
+    if not re.fullmatch(r"\d{2}:\d{2}", message):
+        return False
+    try:
+        datetime.strptime(message, '%H:%M')
+    except ValueError:
+        return False
+    return True
 
 
 def validate_string_field(message):

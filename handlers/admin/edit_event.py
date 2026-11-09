@@ -1,3 +1,5 @@
+from html import escape
+
 from aiogram import types
 from aiogram.dispatcher import Dispatcher, FSMContext
 
@@ -81,7 +83,7 @@ async def event_name_edit(message: types.Message, state: FSMContext):
     else:
         if not validate_string_field(name):
             await message.answer(
-                'Что то не так с введенным текстом.\n'
+                'Что-то не так с введенным текстом.\n'
                 'Название не должно содержать символы <> '
                 'и быть не длиннее 1000 символов.'
             )
@@ -117,8 +119,8 @@ async def event_date_edit(message: types.Message, state: FSMContext):
     else:
         if not validate_date(event_date):
             await message.answer(
-                'Что то не так с введенной датой.\n'
-                'Сообщение дожно быть в формате ДД.ММ.ГГ'
+                'Что-то не так с введенной датой.\n'
+                'Сообщение должно быть в формате ДД.ММ.ГГ '
                 '(например 13.04.26).'
                 )
             return
@@ -128,6 +130,7 @@ async def event_date_edit(message: types.Message, state: FSMContext):
             await EditEventStates.next()
             await message.answer((f'Текущее время: '
                                   f'{convert_time_to_read_format(old_time)}\n'
+                                  f'Введите новое время или нажмите кнопку '
                                   f'Пропустить, если поле не '
                                   f'нужно редактировать'),
                                  reply_markup=skip_with_default_time_button_keyboard()
@@ -151,8 +154,8 @@ async def event_time_edit(message: types.Message, state: FSMContext):
     else:
         if not validate_time(event_time):
             await message.answer(
-                'Что то не так с введенным временем.\n'
-                'Сообщение дожно быть в формате ЧЧ:ММ '
+                'Что-то не так с введенным временем.\n'
+                'Сообщение должно быть в формате ЧЧ:ММ '
                 '(например 12:00 или 23:59).'
             )
             return
@@ -185,7 +188,7 @@ async def event_complexity_edit(message: types.Message, state: FSMContext):
     else:
         if not validate_string_field(event_complexity):
             await message.answer(
-                'Что то не так с введенным текстом.\n'
+                'Что-то не так с введенным текстом.\n'
                 'Значение не должно содержать символы <> '
                 'и быть не длиннее 1000 символов.'
             )
@@ -212,7 +215,7 @@ async def event_payment_edit(message: types.Message, state: FSMContext):
     else:
         if not validate_string_field(payment):
             await message.answer(
-                'Что то не так с введенной стоимость.\n'
+                'Что-то не так с введенной стоимостью.\n'
                 'Текст не должен содержать символы <> '
                 'и быть не длиннее 1000 символов.'
             )
@@ -259,7 +262,7 @@ async def event_comment_edit(message: types.Message, state: FSMContext):
     else:
         if not validate_string_field(comment):
             await message.answer(
-                'Что то не так с введенной стоимость.\n'
+                'Что-то не так с комментарием.\n'
                 'Текст не должен содержать символы <> '
                 'и быть не длиннее 1000 символов.'
             )
@@ -276,9 +279,10 @@ async def event_comment_edit(message: types.Message, state: FSMContext):
         f"<u>Подтвердите редактирование события:</u>\n\n"
         f"<b>Дата:</b> {read_date}\n"
         f"<b>Время:</b> {read_time}\n"
-        f"<b>Событие:</b> {payload['name']}\n"
-        f"<b>Стоимость:</b> {payload['payment']}\n"
-        f"<b>Комментарий:</b> {payload['comment']}"
+        f"<b>Событие:</b> {escape(payload['name'])}\n"
+        f"<b>Сложность:</b> {escape(payload['complexity'])}\n"
+        f"<b>Стоимость:</b> {escape(payload['payment'])}\n"
+        f"<b>Комментарий:</b> {escape(payload['comment'])}"
     )
     await message.answer(
         check_message,

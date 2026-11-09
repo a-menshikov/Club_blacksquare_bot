@@ -1,3 +1,5 @@
+from html import escape
+
 from aiogram import types
 from aiogram.dispatcher import Dispatcher, FSMContext
 
@@ -44,9 +46,9 @@ async def delete_event_approve(message: types.Message, state: FSMContext):
         check_message = (f"<u>Подтвердите удаление события:</u>\n\n"
                          f"<b>Дата:</b> {read_date}\n"
                          f"<b>Время:</b> {read_time}\n"
-                         f"<b>Событие:</b> {data[0]}\n"
-                         f"<b>Сложность:</b> {data[4]}\n"
-                         f"<b>Стоимость:</b> {data[3]}")
+                         f"<b>Событие:</b> {escape(data[0])}\n"
+                         f"<b>Сложность:</b> {escape(data[4])}\n"
+                         f"<b>Стоимость:</b> {escape(data[3])}")
         async with state.proxy() as payload:
             payload['event_id'] = event_id
         await DeleteEventStates.next()

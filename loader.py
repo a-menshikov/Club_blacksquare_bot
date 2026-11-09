@@ -53,8 +53,7 @@ ADMIN = list(map(int, os.getenv("ADMIN_ID").split()))
 TECH = os.getenv("TECH")
 
 storage = MemoryStorage()
-# sock_connect ограничивает и TLS-рукопожатие: зависшее соединение
-# обрывается за 10 секунд вместо 60, и отправку можно повторить.
+# sock_connect обрывает и зависшее TLS-рукопожатие (без него ждёт 60 с)
 bot = Bot(token=TELEGRAM_TOKEN,
           timeout=aiohttp.ClientTimeout(total=30, sock_connect=10))
 dp = Dispatcher(bot, storage=storage)

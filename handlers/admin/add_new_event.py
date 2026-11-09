@@ -1,3 +1,5 @@
+from html import escape
+
 from aiogram import types
 from aiogram.dispatcher import Dispatcher, FSMContext
 
@@ -37,7 +39,7 @@ async def event_name_input(message: types.Message, state: FSMContext):
     name = message.text
     if not validate_string_field(name):
         await message.answer(
-            'Что то не так с введенным текстом.\n'
+            'Что-то не так с введенным текстом.\n'
             'Название не должно содержать символы <> '
             'и быть не длиннее 1000 символов.'
         )
@@ -54,8 +56,8 @@ async def event_date_input(message: types.Message, state: FSMContext):
     event_date = message.text.strip()
     if not validate_date(event_date):
         await message.answer(
-            'Что то не так с введенной датой.\n'
-            'Сообщение дожно быть в формате ДД.ММ.ГГ'
+            'Что-то не так с введенной датой.\n'
+            'Сообщение должно быть в формате ДД.ММ.ГГ '
             '(например 13.04.26).'
         )
         return
@@ -71,8 +73,8 @@ async def event_time_input(message: types.Message, state: FSMContext):
     event_time = message.text.strip()
     if not validate_time(event_time):
         await message.answer(
-            'Что то не так с введенным временем.\n'
-            'Сообщение дожно быть в формате ЧЧ:ММ '
+            'Что-то не так с введенным временем.\n'
+            'Сообщение должно быть в формате ЧЧ:ММ '
             '(например 12:00 или 23:59).'
         )
         return
@@ -88,7 +90,7 @@ async def event_complexity_input(message: types.Message, state: FSMContext):
     event_complexity = message.text.strip()
     if not validate_string_field(event_complexity):
         await message.answer(
-            'Что то не так с введенной сложностью.\n'
+            'Что-то не так с введенной сложностью.\n'
             'Текст не должен содержать символы <> '
             'и быть не длиннее 1000 символов.'
         )
@@ -105,7 +107,7 @@ async def event_payment_input(message: types.Message, state: FSMContext):
     payment = message.text.strip()
     if not validate_string_field(payment):
         await message.answer(
-            'Что то не так с введенной стоимость.\n'
+            'Что-то не так с введенной стоимостью.\n'
             'Текст не должен содержать символы <> '
             'и быть не длиннее 1000 символов.'
         )
@@ -128,7 +130,7 @@ async def event_comment_input(message: types.Message, state: FSMContext):
     else:
         if not validate_string_field(comment):
             await message.answer(
-                'Что то не так с комментарием.\n'
+                'Что-то не так с комментарием.\n'
                 'Текст не должен содержать символы <> '
                 'и быть не длиннее 1000 символов.'
             )
@@ -144,10 +146,10 @@ async def event_comment_input(message: types.Message, state: FSMContext):
         f"<u>Подтвердите добавление события:</u>\n\n"
         f"<b>Дата:</b> {read_date}\n"
         f"<b>Время:</b> {read_time}\n"
-        f"<b>Событие:</b> {data['name']}\n"
-        f"<b>Сложность:</b> {data['complexity']}\n"
-        f"<b>Стоимость:</b> {data['payment']}\n"
-        f"<b>Комментарий:</b> {data['comment']}"
+        f"<b>Событие:</b> {escape(data['name'])}\n"
+        f"<b>Сложность:</b> {escape(data['complexity'])}\n"
+        f"<b>Стоимость:</b> {escape(data['payment'])}\n"
+        f"<b>Комментарий:</b> {escape(data['comment'])}"
     )
 
     await NewEventStates.next()

@@ -1,6 +1,8 @@
 import datetime
+from html import escape
 from typing import Optional
 
+from aiogram.utils.exceptions import BotBlocked, UserDeactivated
 from sqlalchemy.sql import exists
 
 from config import delta_days_for_notification, timezone
@@ -114,6 +116,20 @@ def notification_switcher(telegram_id: int) -> bool:
         return True
 
 
+def disable_notifications(telegram_id: int) -> None:
+    """Отключить уведомления пользователю, до которого бот не достучится."""
+    db_session.query(UserNotificationStatus).filter(
+        UserNotificationStatus.user_id == telegram_id).update(
+            {
+                'status': False,
+            },
+            synchronize_session='fetch'
+            )
+    db_session.commit()
+    logger.info(f"Пользователь {telegram_id} заблокировал бота или удалён, "
+                f"уведомления отключены")
+
+
 def get_calendar(future: bool = False) -> list:
     """Получить список событий.
     Eсли future==True - только будущие."""
@@ -188,18 +204,18 @@ def make_user_calendar_message(data: list) -> str:
             add_message = (
                 f'<b>Дата:</b>  {date}\n'
                 f'<b>Время:</b>  {time}\n'
-                f'<b>Событие:</b>  {i[1]}\n'
-                f'<b>Сложность:</b>  {i[5]}\n'
-                f'<b>Стоимость:</b>  {i[4]}\n\n'
+                f'<b>Событие:</b>  {escape(i[1])}\n'
+                f'<b>Сложность:</b>  {escape(i[5])}\n'
+                f'<b>Стоимость:</b>  {escape(i[4])}\n\n'
             )
         else:
             add_message = (
                 f'<b>Дата:</b>  {date}\n'
                 f'<b>Время:</b>  {time}\n'
-                f'<b>Событие:</b>  {i[1]}\n'
-                f'<b>Сложность:</b>  {i[5]}\n'
-                f'<b>Стоимость:</b>  {i[4]}\n'
-                f'<b>Комментарий:</b>  {i[6]}\n\n'
+                f'<b>Событие:</b>  {escape(i[1])}\n'
+                f'<b>Сложность:</b>  {escape(i[5])}\n'
+                f'<b>Стоимость:</b>  {escape(i[4])}\n'
+                f'<b>Комментарий:</b>  {escape(i[6])}\n\n'
             )
         base_message += add_message
     return base_message
@@ -213,7 +229,7 @@ def make_admin_calendar_message(data: list) -> str:
     for i in data:
         date = convert_date_to_read_format(i[2])
         add_message = (
-            f'<b>{i[0]}.</b>  {i[1]}  {date}\n'
+            f'<b>{i[0]}.</b>  {escape(i[1])}  {date}\n'
             )
         base_message += add_message
     return base_message
@@ -271,18 +287,18 @@ def make_notification_message(data: list[Event]) -> str:
             add_message = (
                 f'<b>Дата:</b>  {date}\n'
                 f'<b>Время:</b>  {time}\n'
-                f'<b>Событие:</b>  {event.name}\n'
-                f'<b>Сложность:</b>  {event.complexity}\n'
-                f'<b>Стоимость:</b>  {event.payment}\n\n'
+                f'<b>Событие:</b>  {escape(event.name)}\n'
+                f'<b>Сложность:</b>  {escape(event.complexity)}\n'
+                f'<b>Стоимость:</b>  {escape(event.payment)}\n\n'
             )
         else:
             add_message = (
                 f'<b>Дата:</b>  {date}\n'
                 f'<b>Время:</b>  {time}\n'
-                f'<b>Событие:</b>  {event.name}\n'
-                f'<b>Сложность:</b>  {event.complexity}\n'
-                f'<b>Стоимость:</b>  {event.payment}\n'
-                f'<b>Комментарий:</b>  {event.comment}\n\n'
+                f'<b>Событие:</b>  {escape(event.name)}\n'
+                f'<b>Сложность:</b>  {escape(event.complexity)}\n'
+                f'<b>Стоимость:</b>  {escape(event.payment)}\n'
+                f'<b>Комментарий:</b>  {escape(event.comment)}\n\n'
             )
         base_message += add_message
     base_message += ('Отключить регулярные уведомления можно в меню '
@@ -388,19 +404,28 @@ def make_triple_message(triples: list[list[tuple]]) -> str:
 async def notificate() -> None:
     """Отправка уведомлений о предстоящих событиях."""
     logger.info("Запуск рассылки уведомлений")
-    events = get_events_for_notification()
-    if events:
-        users = get_users_for_notification()
-        if users:
-            notification_message = make_notification_message(events)
-            for user in users:
-                try:
-                    admin = is_admin(user.user_id)
-                    await send_message_with_retry(
-                        user.user_id, notification_message,
-                        parse_mode='html',
-                        reply_markup=menu_reply_keyboard(admin))
-                    logger.info(f"Напоминание для {user.user_id} отправлено")
-                except Exception:
-                    logger.error(f"Напоминание для {user.user_id} не ушло")
+    # упавшую задачу aioschedule перезапускает каждую секунду, поэтому ловим всё
+    try:
+        events = get_events_for_notification()
+        if events:
+            users = get_users_for_notification()
+            if users:
+                notification_message = make_notification_message(events)
+                for user in users:
+                    try:
+                        admin = is_admin(user.user_id)
+                        await send_message_with_retry(
+                            user.user_id, notification_message,
+                            parse_mode='html',
+                            reply_markup=menu_reply_keyboard(admin))
+                        logger.info(
+                            f"Напоминание для {user.user_id} отправлено")
+                    except (BotBlocked, UserDeactivated):
+                        disable_notifications(user.user_id)
+                    except Exception:
+                        logger.error(
+                            f"Напоминание для {user.user_id} не ушло")
+    except Exception:
+        logger.exception("Рассылка уведомлений прервалась")
+        db_session.rollback()
     logger.info("Рассылка уведомлений завершена")
