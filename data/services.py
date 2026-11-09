@@ -221,18 +221,44 @@ def make_user_calendar_message(data: list) -> str:
     return base_message
 
 
-def make_admin_calendar_message(data: list) -> str:
-    """Формирование сообщения календаря для админа"""
-    if not data:
-        return 'Календарь пуст.\n'
-    base_message = ''
-    for i in data:
-        date = convert_date_to_read_format(i[2])
-        add_message = (
-            f'<b>{i[0]}.</b>  {escape(i[1])}  {date}\n'
-            )
-        base_message += add_message
-    return base_message
+def make_event_buttons(data: list) -> list[tuple[int, str]]:
+    """Подписи кнопок выбора события: «ДД.ММ · название»."""
+    buttons = []
+    for event_id, name, event_date, *_ in data:
+        day_month = convert_date_to_read_format(event_date)[:5]
+        buttons.append((event_id, f'{day_month} · {name}'[:60]))
+    return buttons
+
+
+def get_event_card_data(event_id: str) -> Optional[dict]:
+    """Поля события по id в виде словаря, None — если события нет."""
+    event = get_event_info(event_id)
+    if event is None:
+        return None
+    name, event_date, event_time, payment, complexity, comment = event
+    return {
+        'event_id': event_id,
+        'name': name,
+        'event_date': event_date,
+        'event_time': event_time,
+        'payment': payment,
+        'complexity': complexity,
+        'comment': comment,
+    }
+
+
+def make_event_card(data: dict) -> str:
+    """Карточка события для сообщения с HTML-разметкой."""
+    date = convert_date_to_read_format(data['event_date'])
+    time = convert_time_to_read_format(data['event_time'])
+    return (
+        f"<b>Дата:</b> {date}\n"
+        f"<b>Время:</b> {time}\n"
+        f"<b>Событие:</b> {escape(data['name'])}\n"
+        f"<b>Сложность:</b> {escape(data['complexity'])}\n"
+        f"<b>Стоимость:</b> {escape(data['payment'])}\n"
+        f"<b>Комментарий:</b> {escape(data['comment']) or '—'}"
+    )
 
 
 def convert_date_to_db_format(to_convert: str):

@@ -1,4 +1,6 @@
-from aiogram.types import KeyboardButton, ReplyKeyboardMarkup
+from aiogram.types import (InlineKeyboardButton, InlineKeyboardMarkup,
+                           KeyboardButton, ReplyKeyboardMarkup)
+from aiogram.utils.callback_data import CallbackData
 
 from keyboards.user.keyboards import in_main_menu
 
@@ -14,6 +16,20 @@ default_time_button = "12:00"
 own_game_distrib = "Распределить тройки"
 own_game_order_type = "1. По порядку"
 own_game_snake_type = "2. Змейкой"
+
+# Кнопки под сообщением: выбор события, поле карточки, действие с карточкой
+event_cb = CallbackData('event', 'id')
+field_cb = CallbackData('field', 'name')
+card_cb = CallbackData('card', 'action')
+
+EVENT_FIELD_BUTTONS = {
+    'name': 'Название',
+    'event_date': 'Дата',
+    'event_time': 'Время',
+    'complexity': 'Сложность',
+    'payment': 'Стоимость',
+    'comment': 'Комментарий',
+}
 
 
 def main_admin_menu_keyboard():
@@ -89,4 +105,43 @@ def skip_with_clear_keyboard():
     markup.add(KeyboardButton(clear_comment))
     markup.add(KeyboardButton(skip_button))
     markup.add(KeyboardButton(cancel_button))
+    return markup
+
+
+def events_inline_keyboard(buttons: list[tuple[int, str]]):
+    """Выбор события кнопками под сообщением: пары (id, подпись)."""
+    markup = InlineKeyboardMarkup(row_width=1)
+    for event_id, label in buttons:
+        markup.add(InlineKeyboardButton(
+            label, callback_data=event_cb.new(id=event_id)))
+    markup.add(InlineKeyboardButton(
+        cancel_button, callback_data=card_cb.new(action='cancel')))
+    return markup
+
+
+def event_card_keyboard():
+    """Кнопки карточки события: поля для правки, сохранить, отмена."""
+    markup = InlineKeyboardMarkup(row_width=3)
+    markup.add(*[
+        InlineKeyboardButton(label, callback_data=field_cb.new(name=field))
+        for field, label in EVENT_FIELD_BUTTONS.items()
+    ])
+    markup.row(
+        InlineKeyboardButton('Сохранить',
+                             callback_data=card_cb.new(action='save')),
+        InlineKeyboardButton(cancel_button,
+                             callback_data=card_cb.new(action='cancel')),
+    )
+    return markup
+
+
+def delete_card_keyboard():
+    """Кнопки карточки удаления события."""
+    markup = InlineKeyboardMarkup()
+    markup.row(
+        InlineKeyboardButton('Удалить',
+                             callback_data=card_cb.new(action='delete')),
+        InlineKeyboardButton(cancel_button,
+                             callback_data=card_cb.new(action='cancel')),
+    )
     return markup

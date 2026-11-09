@@ -1,5 +1,3 @@
-from html import escape
-
 from aiogram import types
 from aiogram.dispatcher import Dispatcher, FSMContext
 
@@ -7,307 +5,154 @@ from data.services import (convert_date_to_db_format,
                            convert_date_to_read_format,
                            convert_time_to_db_format,
                            convert_time_to_read_format, get_calendar,
-                           get_event_info, is_admin,
-                           make_admin_calendar_message, update_event)
+                           get_event_card_data, is_admin, make_event_buttons,
+                           make_event_card, update_event)
 from handlers.admin.validators import (validate_date, validate_string_field,
                                        validate_time)
-from keyboards.admin.keyboards import (approve_button, approve_keyboard,
-                                       cancel_button, canсel_keyboard,
-                                       clear_comment, edit_event_button,
-                                       main_admin_menu_keyboard, skip_button,
-                                       skip_keyboard, skip_with_clear_keyboard,
+from keyboards.admin.keyboards import (EVENT_FIELD_BUTTONS, cancel_button,
+                                       canсel_keyboard, card_cb, clear_comment,
+                                       edit_event_button, event_card_keyboard,
+                                       event_cb, events_inline_keyboard,
+                                       field_cb, main_admin_menu_keyboard,
+                                       skip_button, skip_keyboard,
+                                       skip_with_clear_keyboard,
                                        skip_with_default_time_button_keyboard)
 from keyboards.user.keyboards import menu_reply_keyboard
-from loader import logger
 from states.edit_event import EditEventStates
 
 
-async def edit_event(message: types.Message):
-    """Редактирование события."""
-    telegram_id = message.from_user.id
-    admin = is_admin(telegram_id)
-    if admin:
-        await EditEventStates.event_id.set()
-        data = get_calendar(future=True)
-        events_message = make_admin_calendar_message(data)
-        base_message = ('\nВведите идентификатор события, '
-                        'которое нужно отредактировать. Выше список '
-                        'актуальных событий с идентификаторами')
-        events_message += base_message
-        await message.answer(events_message,
-                             parse_mode='html',
-                             reply_markup=canсel_keyboard())
-    else:
+async def edit_event_start(message: types.Message):
+    """Редактирование события: выбор события кнопкой."""
+    if not is_admin(message.from_user.id):
         await message.answer("Ты не админ. Больше так не делай.",
                              reply_markup=menu_reply_keyboard(False))
-
-
-async def edit_event_id(message: types.Message, state: FSMContext):
-    """Получение id редактируемого события и информации о нем."""
-    event_id = message.text.strip()
-    data = get_event_info(event_id)
-    if data:
-        async with state.proxy() as payload:
-            payload['event'] = data
-            payload['event_id'] = event_id
-            old_name = payload['event'][0]
-            await EditEventStates.next()
-            await message.answer((f'Текущее название: {old_name}\n'
-                                  f'Введите новое название или нажмите кнопку '
-                                  f'Пропустить, если поле не '
-                                  f'нужно редактировать'),
-                                 reply_markup=skip_keyboard()
-                                 )
-    else:
-        check_message = 'Такого события нет. Проверьте введённый идентификатор'
-        await message.answer(check_message,
-                             reply_markup=canсel_keyboard())
         return
-
-
-async def event_name_edit(message: types.Message, state: FSMContext):
-    """Ввод нового названия события."""
-    name = message.text
-    if name == skip_button:
-        async with state.proxy() as payload:
-            payload['name'] = payload['event'][0]
-            old_date = payload['event'][1]
-            await EditEventStates.next()
-            await message.answer((f'Текущая дата: '
-                                  f'{convert_date_to_read_format(old_date)}\n'
-                                  f'Введите новую дату или нажмите кнопку '
-                                  f'Пропустить, если поле не '
-                                  f'нужно редактировать'),
-                                 reply_markup=skip_keyboard()
-                                 )
-    else:
-        if not validate_string_field(name):
-            await message.answer(
-                'Что-то не так с введенным текстом.\n'
-                'Название не должно содержать символы <> '
-                'и быть не длиннее 1000 символов.'
-            )
-            return
-        async with state.proxy() as payload:
-            payload['name'] = name
-            old_date = payload['event'][1]
-            await EditEventStates.next()
-            await message.answer((f'Текущая дата: '
-                                  f'{convert_date_to_read_format(old_date)}\n'
-                                  f'Введите новую дату или нажмите кнопку '
-                                  f'Пропустить, если поле не '
-                                  f'нужно редактировать'),
-                                 reply_markup=skip_keyboard()
-                                 )
-
-
-async def event_date_edit(message: types.Message, state: FSMContext):
-    """Ввод новой даты события."""
-    event_date = message.text
-    if event_date == skip_button:
-        async with state.proxy() as payload:
-            payload['event_date'] = payload['event'][1]
-            old_time = payload['event'][2]
-            await EditEventStates.next()
-            await message.answer((f'Текущее время: '
-                                  f'{convert_time_to_read_format(old_time)}\n'
-                                  f'Введите новое время или нажмите кнопку '
-                                  f'Пропустить, если поле не '
-                                  f'нужно редактировать'),
-                                 reply_markup=skip_with_default_time_button_keyboard()
-                                 )
-    else:
-        if not validate_date(event_date):
-            await message.answer(
-                'Что-то не так с введенной датой.\n'
-                'Сообщение должно быть в формате ДД.ММ.ГГ '
-                '(например 13.04.26).'
-                )
-            return
-        async with state.proxy() as payload:
-            payload['event_date'] = convert_date_to_db_format(event_date)
-            old_time = payload['event'][2]
-            await EditEventStates.next()
-            await message.answer((f'Текущее время: '
-                                  f'{convert_time_to_read_format(old_time)}\n'
-                                  f'Введите новое время или нажмите кнопку '
-                                  f'Пропустить, если поле не '
-                                  f'нужно редактировать'),
-                                 reply_markup=skip_with_default_time_button_keyboard()
-                                 )
-
-
-async def event_time_edit(message: types.Message, state: FSMContext):
-    """Ввод нового времени события."""
-    event_time = message.text
-    if event_time == skip_button:
-        async with state.proxy() as payload:
-            payload['event_time'] = payload['event'][2]
-            old_complexity = payload['event'][4]
-            await EditEventStates.next()
-            await message.answer((f'Текущая сложность: {old_complexity}\n'
-                                  f'Введите новую сложность или нажмите '
-                                  f'кнопку Пропустить, если поле не '
-                                  f'нужно редактировать'),
-                                 reply_markup=skip_keyboard()
-                                 )
-    else:
-        if not validate_time(event_time):
-            await message.answer(
-                'Что-то не так с введенным временем.\n'
-                'Сообщение должно быть в формате ЧЧ:ММ '
-                '(например 12:00 или 23:59).'
-            )
-            return
-        async with state.proxy() as payload:
-            payload['event_time'] = convert_time_to_db_format(event_time)
-            old_complexity = payload['event'][4]
-            await EditEventStates.next()
-            await message.answer((f'Текущая сложность: {old_complexity}\n'
-                                  f'Введите новую сложность или нажмите '
-                                  f'кнопку Пропустить, если поле не '
-                                  f'нужно редактировать'),
-                                 reply_markup=skip_keyboard()
-                                 )
-
-
-async def event_complexity_edit(message: types.Message, state: FSMContext):
-    """Ввод новой сложности события."""
-    event_complexity = message.text
-    if event_complexity == skip_button:
-        async with state.proxy() as payload:
-            payload['complexity'] = payload['event'][4]
-            old_payment = payload['event'][3]
-            await EditEventStates.next()
-            await message.answer((f'Текущая стоимость: {old_payment}\n'
-                                  f'Введите новую стоимость или нажмите '
-                                  f'кнопку Пропустить, если поле не '
-                                  f'нужно редактировать'),
-                                 reply_markup=skip_keyboard()
-                                 )
-    else:
-        if not validate_string_field(event_complexity):
-            await message.answer(
-                'Что-то не так с введенным текстом.\n'
-                'Значение не должно содержать символы <> '
-                'и быть не длиннее 1000 символов.'
-            )
-            return
-        async with state.proxy() as payload:
-            payload['complexity'] = event_complexity
-            old_payment = payload['event'][3]
-            await EditEventStates.next()
-            await message.answer((f'Текущая стоимость: {old_payment}\n'
-                                  f'Введите новую стоимость или нажмите '
-                                  f'кнопку Пропустить, если поле не '
-                                  f'нужно редактировать'),
-                                 reply_markup=skip_keyboard()
-                                 )
-
-
-async def event_payment_edit(message: types.Message, state: FSMContext):
-    """Ввод новой стоимости события."""
-    payment = message.text
-    if payment == skip_button:
-        async with state.proxy() as payload:
-            payload['payment'] = payload['event'][3]
-            old_comment = payload['event'][5]
-    else:
-        if not validate_string_field(payment):
-            await message.answer(
-                'Что-то не так с введенной стоимостью.\n'
-                'Текст не должен содержать символы <> '
-                'и быть не длиннее 1000 символов.'
-            )
-            return
-        async with state.proxy() as payload:
-            payload['payment'] = payment
-            old_comment = payload['event'][5]
-
-    await EditEventStates.next()
-
-    if old_comment == '':
-        await message.answer(
-            (
-                'Текущий комментарий не заполнен.\n'
-                'Введите новый комментарий или нажмите '
-                'кнопку Пропустить, если поле не '
-                'нужно редактировать'
-            ),
-            reply_markup=skip_keyboard()
-        )
-    else:
-        await message.answer(
-            (
-                f'Текущий комментарий: {old_comment}\n'
-                f'Введите новый комментарий.\nНажмите '
-                f'кнопку "Пропустить", если поле не '
-                f'нужно редактировать, или кнопку "Очистить комментарий", '
-                f'если поле нужно сделать пустым.'
-            ),
-            reply_markup=skip_with_clear_keyboard()
-        )
-
-
-async def event_comment_edit(message: types.Message, state: FSMContext):
-    """Ввод нового комментария события."""
-    comment = message.text
-
-    if comment == skip_button:
-        async with state.proxy() as payload:
-            payload['comment'] = payload['event'][5]
-    elif comment == clear_comment:
-        async with state.proxy() as payload:
-            payload['comment'] = ''
-    else:
-        if not validate_string_field(comment):
-            await message.answer(
-                'Что-то не так с комментарием.\n'
-                'Текст не должен содержать символы <> '
-                'и быть не длиннее 1000 символов.'
-            )
-            return
-        async with state.proxy() as payload:
-            payload['comment'] = comment
-
-    await EditEventStates.next()
-
-    read_date = convert_date_to_read_format(payload['event_date'])
-    read_time = convert_time_to_read_format(payload['event_time'])
-
-    check_message = (
-        f"<u>Подтвердите редактирование события:</u>\n\n"
-        f"<b>Дата:</b> {read_date}\n"
-        f"<b>Время:</b> {read_time}\n"
-        f"<b>Событие:</b> {escape(payload['name'])}\n"
-        f"<b>Сложность:</b> {escape(payload['complexity'])}\n"
-        f"<b>Стоимость:</b> {escape(payload['payment'])}\n"
-        f"<b>Комментарий:</b> {escape(payload['comment'])}"
-    )
-    await message.answer(
-        check_message,
-        parse_mode='html',
-        reply_markup=approve_keyboard(),
-    )
-
-
-async def edit_event_approve(message: types.Message, state: FSMContext):
-    """Подтверждение редактирования события."""
-    if message.text == approve_button:
-        async with state.proxy() as payload:
-            logger.info(f"{message.from_user.id} редактирует "
-                        f"событие {payload['event_id']}")
-            update_event(payload)
-        await message.answer("Запись отредактирована",
+    events = get_calendar(future=True)
+    if not events:
+        await message.answer('Будущих событий нет.',
                              reply_markup=main_admin_menu_keyboard())
-        await state.finish()
-    else:
-        await message.answer("Подтвердите или отмените процесс")
         return
+    await EditEventStates.choose_event.set()
+    await message.answer('Отменить можно кнопкой «Отмена».',
+                         reply_markup=canсel_keyboard())
+    await message.answer(
+        'Выберите событие для редактирования:',
+        reply_markup=events_inline_keyboard(make_event_buttons(events)))
+
+
+async def event_chosen(call: types.CallbackQuery, callback_data: dict,
+                       state: FSMContext):
+    """Событие выбрано: показать карточку."""
+    await call.answer()
+    event = get_event_card_data(callback_data['id'])
+    if event is None:
+        await call.message.answer('Такого события уже нет.')
+        return
+    await state.update_data(**event)
+    await show_card(call.message, state)
+
+
+async def show_card(message: types.Message, state: FSMContext):
+    """Карточка события с кнопками полей."""
+    data = await state.get_data()
+    await EditEventStates.card.set()
+    await message.answer(
+        '<u>Редактирование. Выберите поле или сохраните:</u>\n\n'
+        f'{make_event_card(data)}',
+        parse_mode='html',
+        reply_markup=event_card_keyboard())
+
+
+async def field_chosen(call: types.CallbackQuery, callback_data: dict,
+                       state: FSMContext):
+    """Поле карточки выбрано: спросить новое значение."""
+    await call.answer()
+    field = callback_data['name']
+    data = await state.get_data()
+    current = data[field]
+    hint = ''
+    keyboard = skip_keyboard()
+    if field == 'event_date':
+        current = convert_date_to_read_format(current)
+        hint = ' в формате ДД.ММ.ГГ'
+    elif field == 'event_time':
+        current = convert_time_to_read_format(current)
+        hint = ' в формате ЧЧ:ММ'
+        keyboard = skip_with_default_time_button_keyboard()
+    elif field == 'comment' and current:
+        keyboard = skip_with_clear_keyboard()
+    await state.update_data(field=field)
+    await EditEventStates.field_value.set()
+    label = EVENT_FIELD_BUTTONS[field]
+    await call.message.answer(
+        f'{label}: {current or "не заполнено"}\n'
+        f'Введите новое значение{hint}.\n'
+        f'Кнопка «Пропустить» оставит как есть.',
+        reply_markup=keyboard)
+
+
+async def field_value_input(message: types.Message, state: FSMContext):
+    """Новое значение поля: проверить, записать и вернуть карточку."""
+    data = await state.get_data()
+    field = data['field']
+    text = message.text.strip()
+
+    if text == skip_button:
+        await show_card(message, state)
+        return
+    if field == 'comment' and text == clear_comment:
+        value = ''
+    elif field == 'event_date':
+        if not validate_date(text):
+            await message.answer('Что-то не так с введенной датой.\n'
+                                 'Сообщение должно быть в формате ДД.ММ.ГГ '
+                                 '(например 13.04.26).')
+            return
+        value = convert_date_to_db_format(text)
+    elif field == 'event_time':
+        if not validate_time(text):
+            await message.answer('Что-то не так с введенным временем.\n'
+                                 'Сообщение должно быть в формате ЧЧ:ММ '
+                                 '(например 12:00 или 23:59).')
+            return
+        value = convert_time_to_db_format(text)
+    else:
+        if not validate_string_field(text):
+            await message.answer('Что-то не так с введенным текстом.\n'
+                                 'Текст не должен содержать символы <> '
+                                 'и быть не длиннее 1000 символов.')
+            return
+        value = text
+
+    await state.update_data({field: value})
+    await show_card(message, state)
+
+
+async def card_save(call: types.CallbackQuery, state: FSMContext):
+    """Сохранить отредактированное событие."""
+    await call.answer()
+    update_event(await state.get_data())
+    await state.finish()
+    await call.message.answer('Запись отредактирована',
+                              reply_markup=main_admin_menu_keyboard())
+
+
+async def card_cancel(call: types.CallbackQuery, state: FSMContext):
+    """Кнопка «Отмена» под сообщением."""
+    await call.answer()
+    await state.finish()
+    await call.message.answer('Операция отменена',
+                              reply_markup=main_admin_menu_keyboard())
+
+
+async def stale_button(call: types.CallbackQuery):
+    """Нажата кнопка из старого сообщения."""
+    await call.answer('Эта кнопка уже не действует. Начните заново из меню.',
+                      show_alert=True)
 
 
 async def cancel_edit_note(message: types.Message, state: FSMContext):
-    """Отмена добавления нового события."""
+    """Отмена редактирования события."""
     current_state = await state.get_state()
     if current_state is not None:
         await state.finish()
@@ -321,18 +166,22 @@ async def cancel_edit_note(message: types.Message, state: FSMContext):
 def register_edit_event_handlers(dp: Dispatcher):
     dp.register_message_handler(cancel_edit_note, text=cancel_button,
                                 state='*')
-    dp.register_message_handler(edit_event, text=edit_event_button, state=None)
-    dp.register_message_handler(edit_event_id, state=EditEventStates.event_id)
-    dp.register_message_handler(event_name_edit, state=EditEventStates.name)
-    dp.register_message_handler(event_date_edit,
-                                state=EditEventStates.event_date)
-    dp.register_message_handler(event_time_edit,
-                                state=EditEventStates.event_time)
-    dp.register_message_handler(event_complexity_edit,
-                                state=EditEventStates.complexity)
-    dp.register_message_handler(event_payment_edit,
-                                state=EditEventStates.payment)
-    dp.register_message_handler(event_comment_edit,
-                                state=EditEventStates.comment)
-    dp.register_message_handler(edit_event_approve,
-                                state=EditEventStates.approve)
+    dp.register_message_handler(edit_event_start, text=edit_event_button,
+                                state=None)
+    dp.register_callback_query_handler(event_chosen, event_cb.filter(),
+                                       state=EditEventStates.choose_event)
+    dp.register_callback_query_handler(field_chosen, field_cb.filter(),
+                                       state=EditEventStates.card)
+    dp.register_message_handler(field_value_input,
+                                state=EditEventStates.field_value)
+    dp.register_callback_query_handler(card_save,
+                                       card_cb.filter(action='save'),
+                                       state=EditEventStates.card)
+    dp.register_callback_query_handler(card_cancel,
+                                       card_cb.filter(action='cancel'),
+                                       state='*')
+
+
+def register_stale_button_handler(dp: Dispatcher):
+    """Регистрировать последним: ловит кнопки, которые никто не обработал."""
+    dp.register_callback_query_handler(stale_button, state='*')

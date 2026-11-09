@@ -9,7 +9,8 @@ from data.sender import send_message_with_retry
 from data.services import notificate
 from handlers.admin.add_new_event import register_add_event_handlers
 from handlers.admin.delete_event import register_delete_event_handlers
-from handlers.admin.edit_event import register_edit_event_handlers
+from handlers.admin.edit_event import (register_edit_event_handlers,
+                                       register_stale_button_handler)
 from handlers.admin.handlers import register_admin_handlers
 from handlers.admin.own_game_distrib import register_own_game_distribution_handlers
 from handlers.user.handlers import register_user_handlers
@@ -51,6 +52,7 @@ register_add_event_handlers(dp)
 register_edit_event_handlers(dp)
 register_delete_event_handlers(dp)
 register_own_game_distribution_handlers(dp)
+register_stale_button_handler(dp)
 dp.register_errors_handler(on_handler_error)
 
 executor.start_polling(dp, skip_updates=True, on_startup=on_startup)
