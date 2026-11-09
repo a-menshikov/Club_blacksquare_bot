@@ -4,6 +4,7 @@ import aioschedule
 from aiogram.utils import executor
 
 from data.create_db import create_db
+from data.sender import send_message_with_retry
 from data.services import notificate
 from handlers.admin.add_new_event import register_add_event_handlers
 from handlers.admin.delete_event import register_delete_event_handlers
@@ -11,7 +12,7 @@ from handlers.admin.edit_event import register_edit_event_handlers
 from handlers.admin.handlers import register_admin_handlers
 from handlers.admin.own_game_distrib import register_own_game_distribution_handlers
 from handlers.user.handlers import register_user_handlers
-from loader import TECH, bot, dp, logger
+from loader import TECH, dp, logger
 
 
 async def on_startup(_):
@@ -20,9 +21,9 @@ async def on_startup(_):
     loop = asyncio.get_event_loop()
     loop.create_task(scheduler())
     try:
-        await bot.send_message(TECH, 'Бот запущен')
+        await send_message_with_retry(TECH, 'Бот запущен')
     except Exception:
-        pass
+        pass  # причина уже в логе; без этого сообщения бот работает
     logger.info('Бот запущен')
 
 

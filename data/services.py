@@ -5,10 +5,11 @@ from sqlalchemy.sql import exists
 
 from config import delta_days_for_notification, timezone
 from keyboards.user.keyboards import menu_reply_keyboard
-from loader import ADMIN, bot, logger
+from loader import ADMIN, logger
 
 from .db_loader import db_session
 from .models import Event, User, UserNotificationStatus
+from .sender import send_message_with_retry
 
 
 def is_user_exist_in_base(telegram_id: int) -> bool:
@@ -304,7 +305,7 @@ def parse_players(text: str) -> list[tuple]:
             raise ValueError(
                 f'Проблема в строке номер {idx}: "{line}"\n'
                 'Неполная строка или балл не в формате целого числа.\n'
-            )
+            ) from None
     if len(players) < 6:
         raise ValueError(
             'В списке мало игроков для распределения. Не балуйся!\n'
@@ -395,7 +396,7 @@ async def notificate() -> None:
             for user in users:
                 try:
                     admin = is_admin(user.user_id)
-                    await bot.send_message(
+                    await send_message_with_retry(
                         user.user_id, notification_message,
                         parse_mode='html',
                         reply_markup=menu_reply_keyboard(admin))

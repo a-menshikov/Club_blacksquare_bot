@@ -3,6 +3,7 @@ import os
 from datetime import datetime
 from logging.handlers import RotatingFileHandler
 
+import aiohttp
 import pytz
 from aiogram import Bot
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
@@ -52,7 +53,10 @@ ADMIN = list(map(int, os.getenv("ADMIN_ID").split()))
 TECH = os.getenv("TECH")
 
 storage = MemoryStorage()
-bot = Bot(token=TELEGRAM_TOKEN)
+# sock_connect ограничивает и TLS-рукопожатие: зависшее соединение
+# обрывается за 10 секунд вместо 60, и отправку можно повторить.
+bot = Bot(token=TELEGRAM_TOKEN,
+          timeout=aiohttp.ClientTimeout(total=30, sock_connect=10))
 dp = Dispatcher(bot, storage=storage)
 
 dp.middleware.setup(LoggingMiddleware(logger=aiogram_logger))
